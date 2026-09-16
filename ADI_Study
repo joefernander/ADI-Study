@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why Did Two Identical Labs Produce Two Different Results?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #E9E8E3;
+    --card: #FFFFFF;
+    --ink: #34322C;
+    --ink-soft: #5C594F;
+    --board: #E1DFD5;
+    --board-2: #D6D3C5;
+    --amber: #8A6650;
+    --rust: #6E5138;
+    --sage: #7E9273;
+    --line: rgba(52,50,44,0.13);
+    --shadow: rgba(52,50,44,0.14);
+    --focus: #6E5138;
+    --serif: 'Zilla Slab', Georgia, serif;
+    --sans: 'Source Sans 3', -apple-system, Helvetica, Arial, sans-serif;
+    --mono: 'Courier Prime', 'Courier New', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;padding-bottom:150px;}
+  a{color:inherit;}
+  ::selection{background:var(--amber);color:var(--card);}
+  :focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+
+  .skip-link{
+    position:absolute;
+    left:-9999px;
+    top:auto;
+    z-index:100;
+    background:var(--ink);
+    color:var(--paper);
+    padding:12px 20px;
+    border-radius:4px;
+    font-family:var(--sans);
+    font-weight:600;
+    text-decoration:none;
+  }
+  .skip-link:focus{
+    left:16px;
+    top:16px;
+  }
+  main:focus{outline:none;}
+
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px;}
+
+  /* ---- top progress rail + dots ---- */
+  .rail{position:fixed;top:0;left:0;right:0;height:4px;background:var(--line);z-index:60;}
+  .rail-fill{height:100%;width:0%;background:var(--amber);transition:width .2s ease-out;}
+  .stage-dot{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:60;}
+  .stage-dot button{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-soft);background:transparent;padding:0;cursor:pointer;opacity:.55;}
+  .stage-dot button[aria-current="true"]{background:var(--amber);border-color:var(--amber);opacity:1;}
+  @media (max-width:760px){ .stage-dot{display:none;} }
+
+  /* ---- panels ---- */
+  .panel{display:none;}
+  #stage-0.panel{display:block;}
+  section.panel{padding:60px 0 40px;}
+
+  .eyebrow{font-family:var(--mono);font-size:.78rem;color:var(--rust);margin:0 0 10px;letter-spacing:.01em;}
+  h1,h2{font-family:var(--serif);font-weight:600;line-height:1.14;margin:0 0 18px;}
+  h2{font-size:clamp(1.5rem,3.6vw,2.05rem);}
+  h3{font-family:var(--serif);font-weight:600;font-size:1.08rem;margin:0 0 8px;}
+  p.lede{font-size:1.06rem;color:var(--ink-soft);}
+  p{}
+
+  /* ---- hero ---- */
+  .hero{background:var(--board);color:var(--ink);padding:96px 24px 76px;position:relative;overflow:hidden;}
+  .hero-inner{max-width:760px;margin:0 auto;position:relative;}
+  .hero h1{font-size:clamp(2.1rem,5.2vw,3.2rem);max-width:15ch;}
+  .hero p{font-size:1.08rem;color:var(--ink-soft);margin:0 0 34px;}
+  .btn{font-family:var(--sans);font-weight:600;font-size:1rem;background:var(--amber);color:var(--card);border:none;padding:14px 26px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
+  .btn:hover{filter:brightness(1.07);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
+  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--ink-soft);filter:none;}
+  .btn-ghost:disabled{border-color:var(--line);}
+
+  /* ---- generic building blocks ---- */
+  .callout{margin-top:26px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:2px;padding:18px 20px;}
+  .callout .k{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 8px;}
+  .callout p{margin:0;font-family:var(--serif);font-size:1.06rem;}
+
+  .stat-row{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 6px;}
+  .stat-chip{font-family:var(--mono);font-size:.78rem;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);}
+
+  .snapshot-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
+  @media (max-width:620px){ .snapshot-grid{grid-template-columns:1fr;} }
+  .snapshot{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:20px;}
+  .snapshot .room-label{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 8px;}
+  .snapshot p{margin:0;font-size:.95rem;}
+
+  .note{margin-top:20px;font-size:.9rem;color:var(--ink-soft);}
+
+  /* ---- bar charts ---- */
+  .barchart{margin-top:24px;display:flex;flex-direction:column;gap:16px;}
+  .barchart-group{display:flex;flex-direction:column;gap:8px;}
+  .barchart-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--ink-soft);}
+  .barchart-label b{color:var(--ink);}
+  .bar-row{display:flex;align-items:center;gap:10px;}
+  .bar-track{flex:1;height:22px;background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:2px 0 0 2px;width:0%;transition:width 1s cubic-bezier(.2,.7,.3,1);}
+  .bar-fill.si{background:var(--ink-soft);}
+  .bar-fill.adi{background:var(--amber);}
+  .bar-value{flex:none;width:38px;text-align:right;font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+  .bar-value.adi{color:var(--rust);font-weight:700;}
+  .barchart-legend{display:flex;gap:18px;margin-top:6px;font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);}
+  .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .legend-dot.si{background:var(--ink-soft);}
+  .legend-dot.adi{background:var(--amber);}
+
+  .result-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;}
+  @media (max-width:620px){ .result-cards{grid-template-columns:1fr;} }
+  .result-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px 20px;}
+  .result-card .tag2{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin:0 0 6px;}
+  .result-card p{margin:0;font-size:.94rem;color:var(--ink-soft);}
+  .result-card p.big{font-family:var(--serif);font-size:1.35rem;color:var(--ink);margin-bottom:6px;}
+
+  /* ---- quote cards ---- */
+  .quote-grid{display:flex;flex-direction:column;gap:12px;margin-top:24px;}
+  .quote-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 20px;display:flex;gap:14px;}
+  .quote-card .who{flex:none;width:76px;font-family:var(--mono);font-size:.7rem;color:var(--ink-soft);padding-top:2px;}
+  .quote-card p{margin:0;font-size:.96rem;}
+  .quote-card.trade{border-left:3px solid var(--rust);}
+  .quote-card.pos{border-left:3px solid var(--sage);}
+
+  /* ---- ADI timeline ---- */
+  .guiding-q{margin:24px 0 8px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:4px;padding:18px 20px;}
+  .guiding-q .k{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin:0 0 6px;}
+  .guiding-q p{margin:0;font-family:var(--serif);font-size:1.15rem;color:var(--ink);}
+
+  .timeline{margin-top:28px;position:relative;padding-left:40px;}
+  .timeline::before{content:"";position:absolute;left:14px;top:6px;bottom:6px;width:2px;background:var(--line);}
+  .tstep{position:relative;padding-bottom:26px;}
+  .tstep:last-child{padding-bottom:0;}
+  .tstep::before{
+    content:attr(data-n);
+    position:absolute; left:-40px; top:0;
+    width:29px; height:29px;
+    border-radius:50%;
+    background:var(--card);
+    border:1.5px solid var(--amber);
+    color:var(--ink);
+    font-family:var(--mono); font-size:.78rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .tstep h3{font-family:var(--serif);font-size:1.05rem;margin:0 0 6px;}
+  .tstep p{margin:0;font-size:.93rem;color:var(--ink-soft);}
+  .tstep .applied{margin-top:8px;font-size:.9rem;color:var(--ink);background:var(--card);border:1px dashed var(--line);border-radius:3px;padding:8px 12px;}
+  .tstep .applied b{color:var(--rust);font-family:var(--mono);font-size:.72rem;display:block;margin-bottom:4px;font-weight:400;}
+
+  /* ---- comparison table ---- */
+  .table-wrap{margin-top:26px;overflow-x:auto;border:1px solid var(--line);border-radius:4px;}
+  table{border-collapse:collapse;width:100%;min-width:640px;background:var(--card);}
+  thead th{
+    text-align:left;
+    font-family:var(--mono);
+    font-size:.74rem;
+    color:var(--ink-soft);
+    font-weight:400;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+  }
+  tbody td, tbody th{
+    padding:16px;
+    font-size:.92rem;
+    text-align:left;
+    vertical-align:top;
+    border-bottom:1px solid var(--line);
+  }
+  tbody tr:last-child td, tbody tr:last-child th{border-bottom:none;}
+  td.lab-name, th.lab-name{font-family:var(--serif);font-weight:600;font-size:1rem;white-space:nowrap;}
+  td.si-cell{color:var(--ink-soft);}
+  td.adi-cell{border-left:3px solid var(--amber);}
+  code{font-family:var(--mono);font-size:.9em;color:var(--ink);}
+
+  /* ---- closing ---- */
+  .closing{background:var(--board);}
+  .closing p.lede{color:var(--ink-soft);}
+  .takeaway-list{list-style:none;padding:0;margin:26px 0 0;display:flex;flex-direction:column;gap:14px;}
+  .takeaway-list li{display:flex;gap:14px;align-items:flex-start;font-size:.98rem;color:var(--ink);}
+  .takeaway-list li::before{content:"—";color:var(--rust);flex:none;}
+  .caveat{margin-top:32px;padding-top:26px;border-top:1px solid var(--line);font-size:.87rem;color:var(--ink-soft);}
+  .caveat a{color:var(--rust);text-decoration:underline;}
+
+  footer{text-align:center;padding:20px 24px 8px;font-family:var(--mono);font-size:.75rem;color:var(--ink-soft);}
+
+  /* ---- pager ---- */
+  .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);z-index:70;}
+  .pager{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 20px 8px;}
+  .pager .step-label{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft);text-align:center;flex:1;}
+  .pager .btn{padding:11px 20px;font-size:.94rem;}
+  @media (max-width:480px){ .pager .btn span.full{display:none;} }
+
+  /* ---- top-right actions ---- */
+  .top-actions{position:fixed;top:16px;right:16px;z-index:65;display:flex;gap:8px;}
+  .top-actions a, .top-actions button{
+    font-family:var(--mono);
+    font-size:.72rem;
+    letter-spacing:.01em;
+    background:var(--card);
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:8px 14px;
+    cursor:pointer;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    box-shadow:0 1px 3px var(--shadow);
+  }
+  .top-actions a:hover, .top-actions button:hover{border-color:var(--ink-soft);}
+  @media (max-width:640px){
+    .top-actions{top:auto;bottom:70px;right:12px;}
+    .top-actions span.full{display:none;}
+  }
+
+  /* ---- footer / acknowledgement ---- */
+  .site-footer{text-align:center;padding:2px 20px 12px;}
+  .site-footer p{margin:0 0 3px;font-family:var(--mono);font-size:.68rem;line-height:1.4;color:var(--ink-soft);max-width:none;}
+  .site-footer .ack{opacity:.85;}
+
+  /* ---- print / PDF export ---- */
+  @media print{
+    body{padding-bottom:0;background:#fff;}
+    .rail, .stage-dot, .bottom-bar, .top-actions{display:none !important;}
+    .panel{display:block !important;page-break-after:always;}
+    .panel:last-of-type{page-break-after:auto;}
+    .hero{padding:40px 24px;}
+    section.panel{padding:24px 0;}
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
+
+<div class="rail" aria-hidden="true"><div class="rail-fill" id="railFill"></div></div>
+<div class="stage-dot" id="stageDots" role="navigation" aria-label="Jump to a step"></div>
+
+<div class="top-actions">
+  <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener" aria-label="Read the article (opens in a new tab)">↗ <span class="full" aria-hidden="true">Read the article</span></a>
+</div>
+
+<header class="hero panel" id="stage-0">
+  <div class="hero-inner">
+    <p class="eyebrow">01 — INTRODUCTION · INSTR. SCI. 52, 743–760 (2024)</p>
+    <h1>Two classes ran the same five labs. Only one improved.</h1>
+    <p class="lede">67 eighth graders, one school, one teacher, ten weeks. Same five science experiments, same materials, same time — but one class followed a fixed procedure and the other had to invent its own.</p>
+    <p>Scientific literacy is a central goal of science education, but most definitions go beyond memorized facts: understanding how scientific knowledge gets built, reasoning with evidence, and applying that reasoning to real decisions. A growing body of research points to <b>argumentation</b> — building a claim, backing it with evidence, defending it against pushback — as one of the clearest ways to build that. What was missing was a study that tested whether bundling those practices into one classroom model actually moved a validated measure of scientific literacy.</p>
+    <p>This is worth flagging up front: it's a <b>learning sciences</b> study, not a psychology lab experiment. There's no isolated task, no undergraduate volunteers, no artificial setting. It happened inside a real public-school classroom, run by the students' own science teacher, folded into the actual curriculum over a full ten-week unit — the kind of messy, real conditions teachers actually work in, not a controlled booth. That's what gives the findings whatever relevance they have to an actual classroom.</p>
+    <div class="callout">
+      <p class="k">THE RESEARCH QUESTION</p>
+      <p>Is Argument-Driven Inquiry (ADI) better than a more traditional, structured-inquiry lab at building eighth graders' scientific literacy — and if so, in what specific ways?</p>
+    </div>
+    <button class="btn" id="startBtn" style="margin-top:30px;">Continue →</button>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+<div class="wrap">
+
+  <section class="panel" id="stage-1">
+    <p class="eyebrow">02 — THEORY</p>
+    <h2>Argument-Driven Inquiry, and where it comes from</h2>
+    <p class="lede">ADI is one specific way of structuring inquiry-based learning — built around argumentation as the engine of understanding.</p>
+    <p>All five labs in this study followed the same eight-step ADI structure (Sampson, Grooms &amp; Walker, 2009). Here's what that looked like for one of them.</p>
+
+    <div class="guiding-q">
+      <p class="k">GUIDING QUESTION — GERMINATION LAB</p>
+      <p>What conditions make seeds germinate fastest?</p>
+    </div>
+
+    <div class="timeline">
+      <div class="tstep" id="tstep-1" data-n="1">
+        <h3>Identify the task &amp; guiding question</h3>
+        <p>Groups receive the question above, background reading, and a list of available materials — seeds, soil, water, light sources, a dark box. No procedure.</p>
+      </div>
+      <div class="tstep" id="tstep-2" data-n="2">
+        <h3>Design a method &amp; collect data</h3>
+        <p>Each group decides what to vary — light versus dark, water amount, temperature — and builds a procedure to test it themselves.</p>
+      </div>
+      <div class="tstep" id="tstep-3" data-n="3">
+        <h3>Produce a tentative argument</h3>
+        <p>Groups turn their germination counts into a claim — "seeds germinate faster under X condition" — backed by their data and a scientific reason why.</p>
+      </div>
+      <div class="tstep" id="tstep-4" data-n="4">
+        <h3>Argumentation session</h3>
+        <p>Each group presents its claim on a whiteboard. Other groups compare methods and challenge weak evidence or shaky reasoning.</p>
+      </div>
+      <div class="tstep" id="tstep-5" data-n="5">
+        <h3>Explicit, reflective discussion</h3>
+        <p>The teacher leads a discussion connecting what just happened to how science really works — including why different groups landed on different, still-defensible conclusions.</p>
+      </div>
+      <div class="tstep" id="tstep-6" data-n="6">
+        <h3>Write an investigation report</h3>
+        <p>Each student individually writes up what they tried, why, and what they're arguing.</p>
+      </div>
+      <div class="tstep" id="tstep-7" data-n="7">
+        <h3>Double-blind peer review</h3>
+        <p>Reports are anonymized and swapped. Classmates review them against a rubric covering the goals, the investigation, the argument, and the writing.</p>
+      </div>
+      <div class="tstep" id="tstep-8" data-n="8">
+        <h3>Revise</h3>
+        <p>Each student revises their report based on peer feedback before it's finalized — closing the loop from question to polished argument.</p>
+      </div>
+    </div>
+
+    <p class="note">ADI descends from a longer tradition of inquiry-based learning — Pedaste et al. (2015) synthesized 32 studies into five general phases (Orientation, Conceptualization, Investigation, Conclusion, Discussion) that most inquiry frameworks share. How ADI's eight steps line up with that tradition is worth coming back to once you've seen the results.</p>
+  </section>
+
+  <section class="panel" id="stage-2">
+    <p class="eyebrow">03 — RESEARCH DESIGN</p>
+    <h2>Same school, same teacher, same five labs — one variable changed</h2>
+    <p class="lede">To isolate the effect of the teaching model itself, the researchers kept almost everything else constant.</p>
+
+    <div class="stat-row">
+      <span class="stat-chip">67 students</span>
+      <span class="stat-chip">2 intact classes</span>
+      <span class="stat-chip">1 science teacher</span>
+      <span class="stat-chip">10 weeks</span>
+      <span class="stat-chip">5 lab investigations</span>
+    </div>
+
+    <div class="snapshot-grid">
+      <div class="snapshot">
+        <p class="room-label">CLASS A — STRUCTURED INQUIRY (comparison)</p>
+        <p>Handed a research question, background information, a materials list, and a step-by-step procedure before they began. Every design decision was already made for them.</p>
+      </div>
+      <div class="snapshot">
+        <p class="room-label">CLASS B — ARGUMENT-DRIVEN INQUIRY (experimental)</p>
+        <p>Handed only a guiding question and a list of available materials. Groups designed their own method, collected their own data, then built and defended an argument.</p>
+      </div>
+    </div>
+
+    <p style="margin-top:24px;">Both classes were taught by the same experienced teacher, who'd spent four months training in the ADI model beforehand. Neither group had much prior lab experience. Both took a validated Scientific Literacy Assessment before and after the ten weeks — multiple-choice items testing demonstrated scientific thinking, plus a Likert-scale section on motivation and beliefs about science. Researchers also interviewed twelve students afterward, six from each class.</p>
+
+    <h3 style="margin-top:30px;">Every guiding question, asked two ways</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Lab</th><th scope="col">Structured inquiry framing</th><th scope="col">ADI framing</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row" class="lab-name">Density</th>
+            <td class="si-cell">Follow these steps to find the density of each object, then record your results in the table provided.</td>
+            <td class="adi-cell">Here are five objects and a container of water. Which will float and which will sink — and what property actually decides that? Design a way to find out.</td>
+          </tr>
+          <tr>
+            <th scope="row" class="lab-name">Light</th>
+            <td class="si-cell">Measure the light intensity at each of the four listed distances from the lamp using the procedure below.</td>
+            <td class="adi-cell">As a light source moves farther from a surface, how does brightness change? You have a lamp, a light meter, and a metre stick — figure out the relationship yourself.</td>
+          </tr>
+          <tr>
+            <th scope="row" class="lab-name">Germination</th>
+            <td class="si-cell">Plant the seeds exactly as instructed, water on the schedule given, and record germination rate each day.</td>
+            <td class="adi-cell">You have seeds, soil, water, and access to light and dark spaces. What conditions make seeds germinate fastest? Decide what to test and how.</td>
+          </tr>
+          <tr>
+            <th scope="row" class="lab-name">Lamp power</th>
+            <td class="si-cell">Connect the circuit as diagrammed and record the lamp's brightness at each listed voltage.</td>
+            <td class="adi-cell">Here's a lamp, a battery, and some wire. What happens to how brightly it shines as the power supplied changes? Build a setup that lets you find out.</td>
+          </tr>
+          <tr>
+            <th scope="row" class="lab-name">Shade</th>
+            <td class="si-cell">Measure the shadow length at the three times of day specified and complete the data table.</td>
+            <td class="adi-cell">An object's shadow changes shape and length through the day. What's actually driving that change? You have a stick, chalk, and a sunny spot — investigate it.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The exact prompt wording above is illustrative — written in the spirit of each condition, not quoted verbatim from the original lab handouts.</p>
+  </section>
+
+  <section class="panel" id="stage-3">
+    <p class="eyebrow">04 — RESULTS</p>
+    <h2>Both classes started even. Only one class moved.</h2>
+    <p class="lede">On the pre-test, before either treatment began, the two classes scored statistically the same. Ten weeks later, that had changed.</p>
+    <p class="note" style="margin-top:14px;">A quick key: <code>t(65)=3.20, p&lt;.05</code> means a difference large enough that it's unlikely to be due to chance. <b>n.s.</b> means "not significant" — the difference could easily be random noise. <b>d</b> is effect size — how large the gap is, not just whether it's real.</p>
+
+    <div class="result-cards" style="margin-top:22px;">
+      <div class="result-card">
+        <p class="tag2">SCIENTIFIC LITERACY, POST-TEST</p>
+        <p class="big">ADI scored higher</p>
+        <p>Before any teaching happened, the two classes scored about the same on the literacy test — close enough to be chance (<code>t(65)=0.71</code>, n.s.). After ten weeks of the actual labs, that gap became real: the ADI class scored meaningfully higher than the structured-inquiry class (<code>t(65)=3.20</code>, p&lt;.05).</p>
+      </div>
+      <div class="result-card">
+        <p class="tag2">WITHIN-GROUP CHANGE</p>
+        <p class="big">Only ADI improved</p>
+        <p>Looking at each class against its own starting point: the ADI group's scores rose by a large, statistically real margin (<code>t(33)=5.51</code>, d=3.62 — an unusually big effect). The structured-inquiry class's own scores barely moved at all (<code>t(32)=1.25</code>, n.s.).</p>
+      </div>
+      <div class="result-card">
+        <p class="tag2">MOTIVATION &amp; BELIEFS</p>
+        <p class="big">No group difference</p>
+        <p>This measures how much students said they valued science and how confident they felt doing it — not test performance. Both classes reported similar levels, before and after, with no statistically meaningful gap. Whatever ADI students gained, it wasn't extra enthusiasm for science.</p>
+      </div>
+      <div class="result-card">
+        <p class="tag2">THE ONE EXCEPTION</p>
+        <p class="big">Personal epistemology</p>
+        <p>One specific belief did shift more for ADI students: their sense of how certain or tentative scientific knowledge actually is. That gap was statistically real (<code>t(65)=3.05</code>, p&lt;.05), even though the broader belief measures above weren't.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:32px;">What it felt like, in students' own words</h3>
+    <div class="quote-grid">
+      <div class="quote-card pos">
+        <div class="who">ADI<br>student</div>
+        <p>Several said inventing their own method was the hardest part of the lab — and also the part they enjoyed most, because it finally felt like doing real science instead of following steps.</p>
+      </div>
+      <div class="quote-card pos">
+        <div class="who">ADI<br>student</div>
+        <p>One described being genuinely surprised that different groups, working from the exact same guiding question, reached different but equally defensible conclusions.</p>
+      </div>
+      <div class="quote-card trade">
+        <div class="who">ADI<br>student</div>
+        <p>Not everything landed well: some found writing the formal investigation report tedious, and a few questioned whether peer review from classmates was really fair.</p>
+      </div>
+      <div class="quote-card">
+        <div class="who">SI<br>student</div>
+        <p>Structured-inquiry students still reported genuinely enjoying the hands-on lab work — enjoyment, notably, wasn't what separated the two groups.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel closing" id="stage-4">
+    <p class="eyebrow">05 — DISCUSSION</p>
+    <h2>Connecting ADI back to the larger inquiry-based learning conversation</h2>
+    <p class="lede">This ADI/SI comparison is one specific implementation. Pedaste et al. (2015) reviewed 32 studies and synthesized them into five general phases that most inquiry-based learning shares — here's how ADI's eight steps line up with that tradition.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Traditional phase (Pedaste et al.)</th><th scope="col">Where it shows up in ADI</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row" class="lab-name" style="white-space:normal;">Orientation</th><td class="si-cell">Step 1 — the guiding question, handed to students</td></tr>
+          <tr><th scope="row" class="lab-name" style="white-space:normal;">Conceptualization</th><td class="si-cell">Thin here — the question is given, not generated by students</td></tr>
+          <tr><th scope="row" class="lab-name" style="white-space:normal;">Investigation</th><td class="si-cell">Steps 2–3 — design, collect, interpret</td></tr>
+          <tr><th scope="row" class="lab-name" style="white-space:normal;">Conclusion</th><td class="si-cell">Step 6 — the investigation report</td></tr>
+          <tr><th scope="row" class="lab-name" style="white-space:normal;">Discussion</th><td class="si-cell">Steps 4, 5 &amp; 7 — argumentation, reflection, and peer review, not one step but three</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:26px;">One detail from Pedaste et al.'s synthesis lines up neatly here. Across the 32 studies they reviewed, Discussion was never really a single closing step — it kept showing up throughout, both while the work was happening and afterward, looking back. That's likely why ADI builds in a discussion-shaped step three times rather than once at the end.</p>
+
+    <div class="callout" style="border-left-color:var(--sage);">
+      <p class="k">THE CONNECTION</p>
+      <p>ADI isn't a rival to traditional inquiry-based learning — it's one well-specified way of instantiating the same five phases researchers have been converging on for decades, with discussion woven through rather than left implicit.</p>
+    </div>
+
+    <h3 style="margin-top:30px;">What this means for your classroom</h3>
+    <ul class="takeaway-list">
+      <li>Give students a guiding question and materials, not a fixed procedure, and let them design the method.</li>
+      <li>Build in a real argumentation step — students defending a claim to peers who can push back.</li>
+      <li>Follow with explicit reflection on how the investigation itself worked, not just what the answer was.</li>
+      <li>Close the loop with writing and peer review.</li>
+    </ul>
+
+    <p class="caveat">Eymur, G. &amp; Çetin, P. S. (2024). <em>Investigating the role of an inquiry-based science lab on students' scientific literacy.</em> Instructional Science, 52, 743–760. <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener">doi.org/10.1007/s11251-024-09672-w</a> — one quasi-experimental study conducted in a real classroom, so treat the specific numbers as suggestive rather than conclusive.</p>
+    <p class="caveat">Pedaste, M., Mäeots, M., Siiman, L. A., de Jong, T., van Riesen, S. A. N., Kamp, E. T., Manoli, C. C., Zacharia, Z. C., &amp; Tsourlidaki, E. (2015). <em>Phases of inquiry-based learning: Definitions and the inquiry cycle.</em> Educational Research Review, 14, 47–61. <a href="https://doi.org/10.1016/j.edurev.2015.02.003" target="_blank" rel="noopener">doi.org/10.1016/j.edurev.2015.02.003</a></p>
+  </section>
+
+</div>
+</main>
+
+<div class="bottom-bar">
+  <nav class="pager" id="pager" aria-label="Story navigation">
+    <button class="btn btn-ghost" id="prevBtn" type="button" aria-label="Previous step">← <span class="full" aria-hidden="true">Previous</span></button>
+    <span class="step-label" id="stepLabel">Step 1 of 8</span>
+    <button class="btn" id="nextBtn" type="button" aria-label="Next step"><span class="full" aria-hidden="true">Next</span> →</button>
+  </nav>
+  <footer class="site-footer">
+    <p>A guided walkthrough of Eymur &amp; Çetin (2024), built from the published study</p>
+    <p class="ack">Created by Joe Fernander, with acknowledgement to Claude AI (Anthropic) for research synthesis and page development.</p>
+    <p>Last updated September 16, 2026 — conversation turn 26</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const stages = [...document.querySelectorAll('.panel')];
+  const dotsWrap = document.getElementById('stageDots');
+  const railFill = document.getElementById('railFill');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const stepLabel = document.getElementById('stepLabel');
+
+  stages.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to step ' + (i + 1));
+    b.addEventListener('click', () => showStep(i));
+    dotsWrap.appendChild(b);
+  });
+  const dotButtons = [...dotsWrap.children];
+
+  let currentIndex = 0;
+
+  function animateBars(panel){
+    panel.querySelectorAll('.bar-fill').forEach(el => {
+      const target = el.getAttribute('data-target');
+      requestAnimationFrame(() => { el.style.width = target + '%'; });
+    });
+    panel.querySelectorAll('.bar-value').forEach(el => {
+      const target = parseInt(el.getAttribute('data-target'), 10);
+      const duration = 700;
+      const start = performance.now();
+      function tick(now){
+        const progress = Math.min(1, (now - start) / duration);
+        el.textContent = Math.round(target * progress);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function showStep(i){
+    currentIndex = Math.max(0, Math.min(stages.length - 1, i));
+    stages.forEach((s, idx) => { s.style.display = (idx === currentIndex) ? 'block' : 'none'; });
+    window.scrollTo({top: 0, behavior: 'auto'});
+    updateNav();
+    animateBars(stages[currentIndex]);
+  }
+
+  function updateNav(){
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === stages.length - 1;
+    const isLast = currentIndex === stages.length - 1;
+    nextBtn.querySelector('.full').textContent = isLast ? 'Done' : 'Next';
+    nextBtn.lastChild.textContent = isLast ? '' : ' →';
+    nextBtn.setAttribute('aria-label', isLast ? 'Done — this is the last step' : 'Next step');
+    stepLabel.textContent = `Step ${currentIndex + 1} of ${stages.length}`;
+    railFill.style.width = (currentIndex / (stages.length - 1)) * 100 + '%';
+    dotButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === currentIndex)));
+  }
+
+  prevBtn.addEventListener('click', () => showStep(currentIndex - 1));
+  nextBtn.addEventListener('click', () => showStep(currentIndex + 1));
+  document.getElementById('startBtn').addEventListener('click', () => showStep(1));
+  showStep(0);
+})();
+</script>
+
+</body>
+</html>
