@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Why Did Two Identical Labs Produce Two Different Results?</title>
+<title>Investigate It Yourself: The ADI Study</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
@@ -17,7 +17,9 @@
     --board-2: #D6D3C5;
     --amber: #8A6650;
     --rust: #6E5138;
-    --sage: #7E9273;
+    --sage: #4E6B54;
+    --sage-tint: #E4EAE4;
+    --rust-tint: #F2E6DE;
     --line: rgba(52,50,44,0.13);
     --shadow: rgba(52,50,44,0.14);
     --focus: #6E5138;
@@ -25,247 +27,240 @@
     --sans: 'Source Sans 3', -apple-system, Helvetica, Arial, sans-serif;
     --mono: 'Courier Prime', 'Courier New', monospace;
   }
-
+  html{color-scheme:light;}
   *{box-sizing:border-box;}
+  button{font:inherit;color:inherit;-webkit-appearance:none;appearance:none;}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;padding-bottom:150px;}
   a{color:inherit;}
   ::selection{background:var(--amber);color:var(--card);}
   :focus-visible{outline:3px solid var(--focus);outline-offset:3px;}
   @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
 
-  .skip-link{
-    position:absolute;
-    left:-9999px;
-    top:auto;
-    z-index:100;
-    background:var(--ink);
-    color:var(--paper);
-    padding:12px 20px;
-    border-radius:4px;
-    font-family:var(--sans);
-    font-weight:600;
-    text-decoration:none;
-  }
-  .skip-link:focus{
-    left:16px;
-    top:16px;
-  }
+  .skip-link{position:absolute;left:-9999px;z-index:100;background:var(--ink);color:var(--paper);padding:12px 20px;border-radius:4px;font-weight:600;text-decoration:none;}
+  .skip-link:focus{left:16px;top:16px;}
   main:focus{outline:none;}
 
   .wrap{max-width:760px;margin:0 auto;padding:0 24px;}
 
-  /* ---- top progress rail + dots ---- */
   .rail{position:fixed;top:0;left:0;right:0;height:4px;background:var(--line);z-index:60;}
   .rail-fill{height:100%;width:0%;background:var(--amber);transition:width .2s ease-out;}
   .stage-dot{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:60;}
-  .stage-dot button{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-soft);background:transparent;padding:0;cursor:pointer;opacity:.55;}
+  .stage-dot button{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink-soft);background:transparent;padding:0;cursor:pointer;opacity:.4;}
   .stage-dot button[aria-current="true"]{background:var(--amber);border-color:var(--amber);opacity:1;}
+  .stage-dot button[data-done="true"]{background:var(--sage);border-color:var(--sage);opacity:.85;}
   @media (max-width:760px){ .stage-dot{display:none;} }
 
-  /* ---- panels ---- */
+  .top-actions{position:fixed;top:16px;right:16px;z-index:65;display:flex;gap:8px;}
+  .top-actions a, .top-actions button{font-family:var(--mono);font-size:.72rem;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:20px;padding:8px 14px;text-decoration:none;box-shadow:0 1px 3px var(--shadow);cursor:pointer;}
+  .top-actions button[aria-expanded="true"]{border-color:var(--amber);background:var(--board);}
+  @media (max-width:640px){ .top-actions{top:auto;bottom:76px;right:12px;} .top-actions span.full{display:none;} }
+
+  .glossary-overlay{position:fixed;inset:0;background:rgba(52,50,44,0.45);z-index:90;display:none;align-items:flex-start;justify-content:center;padding:80px 20px 20px;}
+  .glossary-overlay.open{display:flex;}
+  .glossary-panel{background:var(--card);border-radius:10px;max-width:560px;width:100%;max-height:75vh;overflow-y:auto;padding:26px 28px;box-shadow:0 20px 50px rgba(0,0,0,0.25);}
+  .glossary-panel h3{margin:0 0 4px;}
+  .glossary-panel .sub{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 18px;}
+  .glossary-item{padding:14px 0;border-top:1px solid var(--line);}
+  .glossary-item:first-of-type{border-top:none;padding-top:0;}
+  .glossary-term{font-family:var(--serif);font-weight:600;font-size:1.05rem;margin:0 0 4px;}
+  .glossary-term .abbr{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin-right:8px;}
+  .glossary-item p{margin:0;font-size:.92rem;color:var(--ink-soft);}
+  .glossary-close{display:block;margin-top:20px;width:100%;text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:10px;font-family:var(--sans);font-weight:600;cursor:pointer;color:var(--ink);}
+
   .panel{display:none;}
   #stage-0.panel{display:block;}
   section.panel{padding:60px 0 40px;}
 
-  .eyebrow{font-family:var(--mono);font-size:.78rem;color:var(--rust);margin:0 0 10px;letter-spacing:.01em;}
-  h1,h2{font-family:var(--serif);font-weight:600;line-height:1.14;margin:0 0 18px;}
+  .eyebrow{font-family:var(--mono);font-size:.78rem;color:var(--rust);margin:0 0 10px;}
+  h1,h2{font-family:var(--serif);font-weight:600;line-height:1.15;margin:0 0 18px;}
   h2{font-size:clamp(1.5rem,3.6vw,2.05rem);}
-  h3{font-family:var(--serif);font-weight:600;font-size:1.08rem;margin:0 0 8px;}
+  h3{font-family:var(--serif);font-weight:600;font-size:1.15rem;margin:0 0 10px;}
   p.lede{font-size:1.06rem;color:var(--ink-soft);}
-  p{}
+  .note{margin-top:16px;font-size:.9rem;color:var(--ink-soft);}
 
-  /* ---- hero ---- */
-  .hero{background:var(--board);color:var(--ink);padding:96px 24px 76px;position:relative;overflow:hidden;}
-  .hero-inner{max-width:760px;margin:0 auto;position:relative;}
-  .hero h1{font-size:clamp(2.1rem,5.2vw,3.2rem);max-width:15ch;}
-  .hero p{font-size:1.08rem;color:var(--ink-soft);margin:0 0 34px;}
-  .btn{font-family:var(--sans);font-weight:600;font-size:1rem;background:var(--amber);color:var(--card);border:none;padding:14px 26px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
-  .btn:hover{filter:brightness(1.07);}
-  .btn:disabled{opacity:.4;cursor:not-allowed;filter:none;}
-  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
-  .btn-ghost:hover{border-color:var(--ink-soft);filter:none;}
-  .btn-ghost:disabled{border-color:var(--line);}
+  .hero{background:var(--board);padding:96px 24px 48px;}
+  .hero-inner{max-width:760px;margin:0 auto;}
+  .hero h1{font-size:clamp(2rem,5vw,3rem);max-width:16ch;}
+  .hero p.lede{}
 
-  /* ---- generic building blocks ---- */
-  .callout{margin-top:26px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:2px;padding:18px 20px;}
-  .callout .k{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 8px;}
-  .callout p{margin:0;font-family:var(--serif);font-size:1.06rem;}
+  /* ---- gate shell ---- */
+  .gate{margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px 24px;}
+  .gate-label{font-family:var(--mono);font-size:.95rem;font-weight:700;color:var(--rust);text-transform:uppercase;letter-spacing:.03em;margin:0 0 14px;display:flex;align-items:center;gap:9px;}
+  .gate-label .lock{font-size:1.1rem;}
+  .gate-prompt{font-family:var(--serif);font-size:1.15rem;margin:0 0 18px;}
+  .gate-feedback{margin-top:16px;padding:14px 16px;border-radius:4px;font-size:.94rem;display:none;}
+  .gate-feedback.show{display:block;}
+  .gate-feedback.correct{background:var(--sage-tint);border:1px solid var(--sage);}
+  .gate-feedback.incorrect{background:var(--rust-tint);border:1px solid var(--rust);}
+  .gate-feedback.neutral{background:var(--paper);border:1px solid var(--line);}
+  .gate-status{margin-top:14px;font-family:var(--mono);font-size:.8rem;color:var(--sage);display:none;align-items:center;gap:6px;}
+  .gate-status.show{display:flex;}
 
-  .stat-row{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 6px;}
-  .stat-chip{font-family:var(--mono);font-size:.78rem;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);}
+  /* ---- quiz options ---- */
+  .quiz-opts{display:flex;flex-direction:column;gap:10px;}
+  .quiz-opt{text-align:left;background:var(--paper);border:1.5px solid var(--line);border-radius:5px;padding:14px 16px;font-family:var(--sans);font-size:.98rem;color:var(--ink);cursor:pointer;}
+  .quiz-opt:hover{border-color:var(--ink-soft);}
+  .quiz-opt[data-picked="true"]{border-color:var(--amber);background:var(--card);}
+  .quiz-opt[data-correct="true"]{border-color:var(--sage);background:var(--sage-tint);}
+  .quiz-opt[data-wrong="true"]{border-color:var(--rust);background:var(--rust-tint);}
+  .quiz-opt:disabled{cursor:default;}
 
-  .snapshot-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;}
-  @media (max-width:620px){ .snapshot-grid{grid-template-columns:1fr;} }
-  .snapshot{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:20px;}
-  .snapshot .room-label{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 8px;}
-  .snapshot p{margin:0;font-size:.95rem;}
+  /* ---- sort game ---- */
+  .sort-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;min-height:20px;}
+  .sort-chip{background:var(--card);color:var(--ink);border:1.5px solid var(--ink-soft);border-radius:20px;padding:9px 16px;font-size:.9rem;cursor:grab;font-family:var(--sans);touch-action:none;user-select:none;}
+  .sort-chip.dragging{cursor:grabbing;box-shadow:0 8px 20px var(--shadow);opacity:.95;}
+  .sort-chip[data-selected="true"]{border-color:var(--amber);background:var(--board);}
+  .sort-chip.shake{animation:shake .35s;border-color:var(--rust) !important;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .sort-buckets{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:520px){ .sort-buckets{grid-template-columns:1fr;} }
+  .bucket{border:2px dashed var(--line);border-radius:6px;padding:14px;min-height:120px;cursor:pointer;}
+  .bucket.drag-over{border-color:var(--amber);background:var(--board);}
+  .bucket:hover{border-color:var(--ink-soft);}
+  .bucket-label{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin:0 0 10px;text-transform:uppercase;}
+  .bucket-item{display:flex;align-items:center;gap:6px;background:var(--sage-tint);border:1px solid var(--sage);border-radius:20px;padding:7px 14px;font-size:.86rem;margin-bottom:6px;}
 
-  .note{margin-top:20px;font-size:.9rem;color:var(--ink-soft);}
+  /* ---- sequence game ---- */
+  .seq-slots{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;min-height:20px;}
+  .seq-slot{border:2px dashed var(--line);border-radius:5px;padding:12px 16px;font-family:var(--mono);font-size:.85rem;color:var(--ink-soft);}
+  .seq-slots.drag-over{outline:2px dashed var(--amber);outline-offset:4px;border-radius:6px;}
+  .seq-slot.filled{border:1.5px solid var(--sage);background:var(--sage-tint);color:var(--ink);font-family:var(--sans);}
+  .seq-pool{display:flex;flex-wrap:wrap;gap:8px;}
 
-  /* ---- bar charts ---- */
-  .barchart{margin-top:24px;display:flex;flex-direction:column;gap:16px;}
+  /* ---- match game ---- */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  @media (max-width:560px){ .match-grid{grid-template-columns:1fr;} }
+  .match-col-label{font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);margin-bottom:8px;}
+  .match-item{display:block;width:100%;text-align:left;background:var(--paper);color:var(--ink);border:1.5px solid var(--line);border-radius:5px;padding:11px 14px;margin-bottom:8px;font-size:.9rem;cursor:pointer;}
+  .match-item[data-selected="true"]{border-color:var(--amber);}
+  .match-item[data-matched="true"]{border-color:var(--sage);background:var(--sage-tint);cursor:default;}
+  .match-item.shake{animation:shake .35s;border-color:var(--rust) !important;}
+
+  /* ---- reflection ---- */
+  textarea.reflect{width:100%;min-height:90px;border:1.5px solid var(--line);border-radius:5px;padding:14px;font-family:var(--sans);font-size:1rem;color:var(--ink);background:var(--paper);resize:vertical;}
+  textarea.reflect:focus{outline:none;border-color:var(--amber);}
+  .char-note{font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);margin-top:8px;}
+
+  /* ---- result cards (reused) ---- */
+  .result-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;}
+  @media (max-width:620px){ .result-cards{grid-template-columns:1fr;} }
+  .result-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px 20px;}
+
+  /* ---- bar charts (real means) ---- */
+  .barchart{display:flex;flex-direction:column;gap:16px;}
   .barchart-group{display:flex;flex-direction:column;gap:8px;}
   .barchart-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.78rem;color:var(--ink-soft);}
-  .barchart-label b{color:var(--ink);}
   .bar-row{display:flex;align-items:center;gap:10px;}
   .bar-track{flex:1;height:22px;background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
-  .bar-fill{height:100%;border-radius:2px 0 0 2px;width:0%;transition:width 1s cubic-bezier(.2,.7,.3,1);}
+  .bar-fill{height:100%;border-radius:2px 0 0 2px;transition:width 1s cubic-bezier(.2,.7,.3,1);}
   .bar-fill.si{background:var(--ink-soft);}
   .bar-fill.adi{background:var(--amber);}
-  .bar-value{flex:none;width:38px;text-align:right;font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+  .bar-value{flex:none;width:42px;text-align:right;font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
   .bar-value.adi{color:var(--rust);font-weight:700;}
   .barchart-legend{display:flex;gap:18px;margin-top:6px;font-family:var(--mono);font-size:.74rem;color:var(--ink-soft);}
   .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
   .legend-dot.si{background:var(--ink-soft);}
   .legend-dot.adi{background:var(--amber);}
-
-  .result-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;}
-  @media (max-width:620px){ .result-cards{grid-template-columns:1fr;} }
-  .result-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px 20px;}
   .result-card .tag2{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin:0 0 6px;}
-  .result-card p{margin:0;font-size:.94rem;color:var(--ink-soft);}
-  .result-card p.big{font-family:var(--serif);font-size:1.35rem;color:var(--ink);margin-bottom:6px;}
-
-  /* ---- quote cards ---- */
-  .quote-grid{display:flex;flex-direction:column;gap:12px;margin-top:24px;}
-  .quote-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 20px;display:flex;gap:14px;}
-  .quote-card .who{flex:none;width:76px;font-family:var(--mono);font-size:.7rem;color:var(--ink-soft);padding-top:2px;}
-  .quote-card p{margin:0;font-size:.96rem;}
-  .quote-card.trade{border-left:3px solid var(--rust);}
-  .quote-card.pos{border-left:3px solid var(--sage);}
-
-  /* ---- ADI timeline ---- */
-  .guiding-q{margin:24px 0 8px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:4px;padding:18px 20px;}
-  .guiding-q .k{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin:0 0 6px;}
-  .guiding-q p{margin:0;font-family:var(--serif);font-size:1.15rem;color:var(--ink);}
-
-  .timeline{margin-top:28px;position:relative;padding-left:40px;}
-  .timeline::before{content:"";position:absolute;left:14px;top:6px;bottom:6px;width:2px;background:var(--line);}
-  .tstep{position:relative;padding-bottom:26px;}
-  .tstep:last-child{padding-bottom:0;}
-  .tstep::before{
-    content:attr(data-n);
-    position:absolute; left:-40px; top:0;
-    width:29px; height:29px;
-    border-radius:50%;
-    background:var(--card);
-    border:1.5px solid var(--amber);
-    color:var(--ink);
-    font-family:var(--mono); font-size:.78rem;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .tstep h3{font-family:var(--serif);font-size:1.05rem;margin:0 0 6px;}
-  .tstep p{margin:0;font-size:.93rem;color:var(--ink-soft);}
-  .tstep .applied{margin-top:8px;font-size:.9rem;color:var(--ink);background:var(--card);border:1px dashed var(--line);border-radius:3px;padding:8px 12px;}
-  .tstep .applied b{color:var(--rust);font-family:var(--mono);font-size:.72rem;display:block;margin-bottom:4px;font-weight:400;}
-
-  /* ---- comparison table ---- */
-  .table-wrap{margin-top:26px;overflow-x:auto;border:1px solid var(--line);border-radius:4px;}
-  table{border-collapse:collapse;width:100%;min-width:640px;background:var(--card);}
-  thead th{
-    text-align:left;
-    font-family:var(--mono);
-    font-size:.74rem;
-    color:var(--ink-soft);
-    font-weight:400;
-    padding:14px 16px;
-    border-bottom:1px solid var(--line);
-    background:var(--paper);
-  }
-  tbody td, tbody th{
-    padding:16px;
-    font-size:.92rem;
-    text-align:left;
-    vertical-align:top;
-    border-bottom:1px solid var(--line);
-  }
-  tbody tr:last-child td, tbody tr:last-child th{border-bottom:none;}
-  td.lab-name, th.lab-name{font-family:var(--serif);font-weight:600;font-size:1rem;white-space:nowrap;}
-  td.si-cell{color:var(--ink-soft);}
-  td.adi-cell{border-left:3px solid var(--amber);}
+  .result-card p.big{font-family:var(--serif);font-size:1.3rem;color:var(--ink);margin:0 0 6px;}
+  .result-card p{margin:0;font-size:.92rem;color:var(--ink-soft);}
   code{font-family:var(--mono);font-size:.9em;color:var(--ink);}
+  .instr{color:var(--rust);font-weight:700;}
 
-  /* ---- closing ---- */
-  .closing{background:var(--board);}
-  .closing p.lede{color:var(--ink-soft);}
-  .takeaway-list{list-style:none;padding:0;margin:26px 0 0;display:flex;flex-direction:column;gap:14px;}
-  .takeaway-list li{display:flex;gap:14px;align-items:flex-start;font-size:.98rem;color:var(--ink);}
+  /* ---- phase cards with icons ---- */
+  .phase-cards{margin-top:20px;display:flex;flex-direction:column;gap:12px;}
+  .phase-card{display:flex;gap:16px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 20px;transition:border-color .15s ease, transform .15s ease;}
+  .phase-card:hover{border-color:var(--amber);transform:translateX(2px);}
+  .phase-icon{flex:none;width:46px;height:46px;border-radius:50%;background:var(--board);display:flex;align-items:center;justify-content:center;font-size:1.4rem;line-height:1;}
+  .phase-card p{margin:0;font-size:.94rem;color:var(--ink-soft);}
+  .phase-card .tag2{font-family:var(--mono);font-size:.72rem;color:var(--rust);margin:0 0 6px;}
+  .match-icon{margin-right:8px;}
+
+  .takeaway-list{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-direction:column;gap:12px;}
+  .takeaway-list li{display:flex;gap:12px;font-size:.96rem;}
   .takeaway-list li::before{content:"—";color:var(--rust);flex:none;}
-  .caveat{margin-top:32px;padding-top:26px;border-top:1px solid var(--line);font-size:.87rem;color:var(--ink-soft);}
+  .caveat{margin-top:24px;padding-top:20px;border-top:1px solid var(--line);font-size:.85rem;color:var(--ink-soft);}
   .caveat a{color:var(--rust);text-decoration:underline;}
 
-  footer{text-align:center;padding:20px 24px 8px;font-family:var(--mono);font-size:.75rem;color:var(--ink-soft);}
+  .btn{font-family:var(--sans);font-weight:600;font-size:1rem;background:var(--amber);color:var(--card);border:none;padding:14px 26px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:10px;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.35;cursor:not-allowed;filter:none;}
+  .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-ghost:disabled{opacity:.35;}
 
-  /* ---- pager ---- */
-  .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);z-index:70;}
   .pager{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 20px 8px;}
   .pager .step-label{font-family:var(--mono);font-size:.76rem;color:var(--ink-soft);text-align:center;flex:1;}
   .pager .btn{padding:11px 20px;font-size:.94rem;}
-  @media (max-width:480px){ .pager .btn span.full{display:none;} }
-
-  /* ---- top-right actions ---- */
-  .top-actions{position:fixed;top:16px;right:16px;z-index:65;display:flex;gap:8px;}
-  .top-actions a, .top-actions button{
-    font-family:var(--mono);
-    font-size:.72rem;
-    letter-spacing:.01em;
-    background:var(--card);
-    color:var(--ink);
-    border:1px solid var(--line);
-    border-radius:20px;
-    padding:8px 14px;
-    cursor:pointer;
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    box-shadow:0 1px 3px var(--shadow);
-  }
-  .top-actions a:hover, .top-actions button:hover{border-color:var(--ink-soft);}
-  @media (max-width:640px){
-    .top-actions{top:auto;bottom:70px;right:12px;}
-    .top-actions span.full{display:none;}
-  }
-
-  /* ---- footer / acknowledgement ---- */
+  .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);z-index:70;}
   .site-footer{text-align:center;padding:2px 20px 12px;}
-  .site-footer p{margin:0 0 3px;font-family:var(--mono);font-size:.68rem;line-height:1.4;color:var(--ink-soft);max-width:none;}
-  .site-footer .ack{opacity:.85;}
-
-  /* ---- print / PDF export ---- */
-  @media print{
-    body{padding-bottom:0;background:#fff;}
-    .rail, .stage-dot, .bottom-bar, .top-actions{display:none !important;}
-    .panel{display:block !important;page-break-after:always;}
-    .panel:last-of-type{page-break-after:auto;}
-    .hero{padding:40px 24px;}
-    section.panel{padding:24px 0;}
-  }
+  .site-footer p{margin:0 0 3px;font-family:var(--mono);font-size:.68rem;line-height:1.4;color:var(--ink-soft);}
 </style>
 </head>
 <body>
 
 <a href="#main-content" class="skip-link">Skip to content</a>
-
 <div class="rail" aria-hidden="true"><div class="rail-fill" id="railFill"></div></div>
-<div class="stage-dot" id="stageDots" role="navigation" aria-label="Jump to a step"></div>
-
+<div class="stage-dot" id="stageDots" role="navigation" aria-label="Steps"></div>
 <div class="top-actions">
-  <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener" aria-label="Read the article (opens in a new tab)">↗ <span class="full" aria-hidden="true">Read the article</span></a>
+  <button type="button" id="glossaryBtn" aria-haspopup="dialog" aria-expanded="false">📖 <span class="full">Glossary</span></button>
+  <a id="articleLink" href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener" aria-label="Read the article (opens in a new tab)">↗ <span class="full" id="articleLinkLabel">Eymur &amp; Çetin (2024)</span></a>
+</div>
+
+<div class="glossary-overlay" id="glossaryOverlay" role="dialog" aria-modal="true" aria-labelledby="glossaryTitle">
+  <div class="glossary-panel">
+    <h3 id="glossaryTitle">Glossary</h3>
+    <p class="sub">Common terms used throughout this walkthrough. Open this from any step.</p>
+
+    <div class="glossary-item">
+      <p class="glossary-term"><span class="abbr">IBL</span>Inquiry-Based Learning</p>
+      <p>An approach to teaching science in which students engage in practices similar to those of working scientists — questioning, investigating, building explanations from evidence — rather than receiving conclusions directly from a teacher or textbook. ADI and structured inquiry are both specific versions of this broader approach.</p>
+    </div>
+    <div class="glossary-item">
+      <p class="glossary-term"><span class="abbr">ADI</span>Argument-Driven Inquiry</p>
+      <p>The instructional model used in the experimental classroom in this study. Students are given a guiding question and materials but no procedure; they design their own investigation, build an argument from their data, defend it to peers, and individually write and revise a report. A specific subset of inquiry-based learning built around argumentation.</p>
+    </div>
+    <div class="glossary-item">
+      <p class="glossary-term"><span class="abbr">SI</span>Structured Inquiry</p>
+      <p>The instructional model used in the comparison classroom. Students are given the research question <em>and</em> the full procedure for answering it by the instructor; they still collect and interpret the data themselves, but the method is not their decision.</p>
+    </div>
+    <div class="glossary-item">
+      <p class="glossary-term"><span class="abbr">SLA-D</span>Scientific Literacy Assessment — Demonstrated</p>
+      <p>The multiple-choice half of the test used to measure students' scientific literacy — items testing whether students can actually reason scientifically (e.g., identifying a testable research question), not just recall facts.</p>
+    </div>
+    <div class="glossary-item">
+      <p class="glossary-term"><span class="abbr">SLA-MB</span>Scientific Literacy Assessment — Motivation &amp; Beliefs</p>
+      <p>The Likert-scale half of the same test, measuring students' attitudes about science across three subscales: value of science, self-efficacy, and personal epistemology (beliefs about the nature of scientific knowledge itself).</p>
+    </div>
+
+    <button type="button" class="glossary-close" id="glossaryCloseBtn">Close</button>
+  </div>
 </div>
 
 <header class="hero panel" id="stage-0">
   <div class="hero-inner">
-    <p class="eyebrow">01 — INTRODUCTION · INSTR. SCI. 52, 743–760 (2024)</p>
-    <h1>Two classes ran the same five labs. Only one improved.</h1>
-    <p class="lede">67 eighth graders, one school, one teacher, ten weeks. Same five science experiments, same materials, same time — but one class followed a fixed procedure and the other had to invent its own.</p>
-    <p>Scientific literacy is a central goal of science education, but most definitions go beyond memorized facts: understanding how scientific knowledge gets built, reasoning with evidence, and applying that reasoning to real decisions. A growing body of research points to <b>argumentation</b> — building a claim, backing it with evidence, defending it against pushback — as one of the clearest ways to build that. What was missing was a study that tested whether bundling those practices into one classroom model actually moved a validated measure of scientific literacy.</p>
-    <p>This is worth flagging up front: it's a <b>learning sciences</b> study, not a psychology lab experiment. There's no isolated task, no undergraduate volunteers, no artificial setting. It happened inside a real public-school classroom, run by the students' own science teacher, folded into the actual curriculum over a full ten-week unit — the kind of messy, real conditions teachers actually work in, not a controlled booth. That's what gives the findings whatever relevance they have to an actual classroom.</p>
-    <div class="callout">
-      <p class="k">THE RESEARCH QUESTION</p>
-      <p>Is Argument-Driven Inquiry (ADI) better than a more traditional, structured-inquiry lab at building eighth graders' scientific literacy — and if so, in what specific ways?</p>
+    <p class="eyebrow">INVESTIGATE IT YOURSELF</p>
+    <h1>Two classes. Same five labs. Only one improved. Why?</h1>
+    <p class="lede">Picture it: same school, same teacher, same ten weeks, the exact same five science experiments. By the end, one class's understanding of science had visibly grown. The other's hadn't moved. Nobody told either class why — they just lived it. You're about to do the same thing, one clue at a time.</p>
+    <p style="color:var(--ink-soft);">This isn't a page to scroll past. Each step below asks you to actually think — predict, sort, sequence, match, or judge — before the next piece unlocks. Get something "wrong" and you'll just see why; nothing here is being graded.</p>
+    <p class="note">Every statistic and procedural detail about the classroom study comes from one published, peer-reviewed paper: Eymur, G. &amp; Çetin, P. S. (2024). <em>Investigating the role of an inquiry-based science lab on students' scientific literacy.</em> Instructional Science, 52, 743–760. <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener" style="color:var(--rust);text-decoration:underline;">doi.org/10.1007/s11251-024-09672-w</a>. A second study, Pedaste et al. (2015) on the traditional inquiry-cycle framework, is introduced later and cited there.</p>
+
+    <div class="gate" id="gate-predict">
+      <p class="gate-label"><span class="lock">🔒</span> STEP 1 OF 9 — MAKE A PREDICTION</p>
+      <p class="gate-prompt">Before you see anything else: what's your best guess for why one class's scores moved and the other's didn't?</p>
+      <div class="quiz-opts" id="predictOpts">
+        <button class="quiz-opt" type="button" data-fb="Good instinct — worth watching for whether the actual lesson content differed. (It didn't — same labs, same materials.)">The actual lesson content was probably different somehow.</button>
+        <button class="quiz-opt" type="button" data-fb="Worth testing — and it's exactly the kind of assumption a well-designed study has to check.">One class was just smarter or more motivated to begin with.</button>
+        <button class="quiz-opt" type="button" data-fb="Hold onto this one — it's close to what the researchers actually argue drove the result.">How the task was handed to students — open question vs. step-by-step — made the difference.</button>
+        <button class="quiz-opt" type="button" data-fb="Possible, but with a real, measurable gap between classes, plain luck is a less likely explanation on its own.">Random luck — normal variation between two classes.</button>
+      </div>
+      <div class="gate-feedback neutral" id="predictFb"></div>
+      <p class="gate-status" id="predictStatus">✓ Prediction locked in — carry it with you.</p>
     </div>
-    <button class="btn" id="startBtn" style="margin-top:30px;">Continue →</button>
+
+    <div class="pager" style="padding-left:0;padding-right:0;margin-top:24px;">
+      <span></span>
+      <button class="btn" id="startBtn" disabled>Continue →</button>
+    </div>
   </div>
 </header>
 
@@ -273,205 +268,400 @@
 <div class="wrap">
 
   <section class="panel" id="stage-1">
-    <p class="eyebrow">02 — THEORY</p>
-    <h2>Argument-Driven Inquiry, and where it comes from</h2>
-    <p class="lede">ADI is one specific way of structuring inquiry-based learning — built around argumentation as the engine of understanding.</p>
-    <p>All five labs in this study followed the same eight-step ADI structure (Sampson, Grooms &amp; Walker, 2009). Here's what that looked like for one of them.</p>
+    <p class="eyebrow">02 — WHERE THIS ACTUALLY HAPPENED</p>
+    <h2>Before the data, a question of trust</h2>
+    <p class="lede">Much education research is conducted in highly controlled environments — randomized controlled trials, lab-based experiments — specifically to isolate one variable at a time. This study is different: it's quasi-experimental, and it happened inside a real classroom, not a lab. That trade-off cuts both ways. A method that "works" under tight lab control can fall apart once it has to survive a real teacher's schedule and thirty-four actual teenagers. But a result from one real classroom can just as easily fail to generalize beyond that specific school, teacher, and context. Neither setting is the "honest" one — they're trading different kinds of risk for different kinds of confidence.</p>
+    <p style="color:var(--ink-soft);">See if you can sort what actually distinguishes this study's setting from a tightly controlled lab experiment — it changes what kind of confidence the results deserve, not whether they deserve any.</p>
 
-    <div class="guiding-q">
-      <p class="k">GUIDING QUESTION — GERMINATION LAB</p>
-      <p>What conditions make seeds germinate fastest?</p>
+    <div class="gate" id="gate-sort1">
+      <p class="gate-label"><span class="lock">🔒</span> Select a chip, then click the bucket it belongs in</p>
+      <div class="sort-pool" id="sortPool1"></div>
+      <div class="sort-buckets" id="sortBuckets1">
+        <div class="bucket" data-bucket="lab" role="button" tabindex="0">
+          <p class="bucket-label">Typical controlled experiment</p>
+          <div class="bucket-items"></div>
+        </div>
+        <div class="bucket" data-bucket="classroom" role="button" tabindex="0">
+          <p class="bucket-label">This study</p>
+          <div class="bucket-items"></div>
+        </div>
+      </div>
+      <p class="gate-status" id="sort1Status">✓ All sorted — this ran inside a real classroom, quasi-experimentally, not under lab control.</p>
     </div>
 
-    <div class="timeline">
-      <div class="tstep" id="tstep-1" data-n="1">
-        <h3>Identify the task &amp; guiding question</h3>
-        <p>Groups receive the question above, background reading, and a list of available materials — seeds, soil, water, light sources, a dark box. No procedure.</p>
-      </div>
-      <div class="tstep" id="tstep-2" data-n="2">
-        <h3>Design a method &amp; collect data</h3>
-        <p>Each group decides what to vary — light versus dark, water amount, temperature — and builds a procedure to test it themselves.</p>
-      </div>
-      <div class="tstep" id="tstep-3" data-n="3">
-        <h3>Produce a tentative argument</h3>
-        <p>Groups turn their germination counts into a claim — "seeds germinate faster under X condition" — backed by their data and a scientific reason why.</p>
-      </div>
-      <div class="tstep" id="tstep-4" data-n="4">
-        <h3>Argumentation session</h3>
-        <p>Each group presents its claim on a whiteboard. Other groups compare methods and challenge weak evidence or shaky reasoning.</p>
-      </div>
-      <div class="tstep" id="tstep-5" data-n="5">
-        <h3>Explicit, reflective discussion</h3>
-        <p>The teacher leads a discussion connecting what just happened to how science really works — including why different groups landed on different, still-defensible conclusions.</p>
-      </div>
-      <div class="tstep" id="tstep-6" data-n="6">
-        <h3>Write an investigation report</h3>
-        <p>Each student individually writes up what they tried, why, and what they're arguing.</p>
-      </div>
-      <div class="tstep" id="tstep-7" data-n="7">
-        <h3>Double-blind peer review</h3>
-        <p>Reports are anonymized and swapped. Classmates review them against a rubric covering the goals, the investigation, the argument, and the writing.</p>
-      </div>
-      <div class="tstep" id="tstep-8" data-n="8">
-        <h3>Revise</h3>
-        <p>Each student revises their report based on peer feedback before it's finalized — closing the loop from question to polished argument.</p>
-      </div>
+    <div class="gate" style="border-left:4px solid var(--sage);cursor:default;margin-top:22px;">
+      <p class="gate-label" style="color:var(--sage);"><span class="lock">💡</span> HOW "SCIENTIFIC LITERACY" WAS ACTUALLY MEASURED</p>
+      <p>Both classes took the same instrument before and after the ten weeks: the <b>Scientific Literacy Assessment</b>, split into two parts. <b>SLA-D</b> ("Demonstrated") is the multiple-choice half — items that test whether students can actually reason scientifically, like identifying a testable research question. <b>SLA-MB</b> ("Motivation & Beliefs") is a Likert-scale half, covering how much students value science, how confident they feel doing it, and their beliefs about the nature of scientific knowledge itself. Both terms are used throughout — and both are in the glossary at the top of the page if you need a reminder.</p>
     </div>
-
-    <p class="note">ADI descends from a longer tradition of inquiry-based learning — Pedaste et al. (2015) synthesized 32 studies into five general phases (Orientation, Conceptualization, Investigation, Conclusion, Discussion) that most inquiry frameworks share. How ADI's eight steps line up with that tradition is worth coming back to once you've seen the results.</p>
   </section>
 
   <section class="panel" id="stage-2">
-    <p class="eyebrow">03 — RESEARCH DESIGN</p>
-    <h2>Same school, same teacher, same five labs — one variable changed</h2>
-    <p class="lede">To isolate the effect of the teaching model itself, the researchers kept almost everything else constant.</p>
+    <p class="eyebrow">03 — THEORY: ARGUMENT-DRIVEN INQUIRY</p>
+    <h2>The method behind the improved class</h2>
+    <p class="lede">The class that improved was using a model called Argument-Driven Inquiry, or ADI — one specific way of doing inquiry-based learning (IBL), built around argumentation as the engine of understanding. The idea behind it is simple: students don't really understand science until they've had to build a claim, defend it with evidence, and have someone push back on it — not just follow a procedure to a predetermined answer.</p>
+    <p style="color:var(--ink-soft);">All five labs followed the same four-move structure. Here's what each move actually involves:</p>
 
-    <div class="stat-row">
-      <span class="stat-chip">67 students</span>
-      <span class="stat-chip">2 intact classes</span>
-      <span class="stat-chip">1 science teacher</span>
-      <span class="stat-chip">10 weeks</span>
-      <span class="stat-chip">5 lab investigations</span>
-    </div>
-
-    <div class="snapshot-grid">
-      <div class="snapshot">
-        <p class="room-label">CLASS A — STRUCTURED INQUIRY (comparison)</p>
-        <p>Handed a research question, background information, a materials list, and a step-by-step procedure before they began. Every design decision was already made for them.</p>
+    <div class="result-cards" style="margin-top:18px;">
+      <div class="result-card">
+        <p class="tag2">MOVE 1</p>
+        <p class="big" style="font-size:1.1rem;">Design &amp; investigate</p>
+        <p>Students get only a question and materials — no steps. They have to decide what to test and how, then collect their own data and build a claim from it.</p>
       </div>
-      <div class="snapshot">
-        <p class="room-label">CLASS B — ARGUMENT-DRIVEN INQUIRY (experimental)</p>
-        <p>Handed only a guiding question and a list of available materials. Groups designed their own method, collected their own data, then built and defended an argument.</p>
+      <div class="result-card">
+        <p class="tag2">MOVE 2</p>
+        <p class="big" style="font-size:1.1rem;">Argue &amp; reflect</p>
+        <p>Groups defend their claim on a whiteboard in front of the class. Other groups are allowed to challenge weak evidence, then <b>the teacher leads a discussion</b> on how science actually works.</p>
+      </div>
+      <div class="result-card">
+        <p class="tag2">MOVE 3</p>
+        <p class="big" style="font-size:1.1rem;">Write</p>
+        <p>Each student — individually — writes up what they tried, why, and what they're arguing. No more group cover.</p>
+      </div>
+      <div class="result-card">
+        <p class="tag2">MOVE 4</p>
+        <p class="big" style="font-size:1.1rem;">Review &amp; revise</p>
+        <p>Classmates peer-review each other's reports, then everyone revises based on that feedback before it's final.</p>
       </div>
     </div>
 
-    <p style="margin-top:24px;">Both classes were taught by the same experienced teacher, who'd spent four months training in the ADI model beforehand. Neither group had much prior lab experience. Both took a validated Scientific Literacy Assessment before and after the ten weeks — multiple-choice items testing demonstrated scientific thinking, plus a Likert-scale section on motivation and beliefs about science. Researchers also interviewed twelve students afterward, six from each class.</p>
-
-    <h3 style="margin-top:30px;">Every guiding question, asked two ways</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th scope="col">Lab</th><th scope="col">Structured inquiry framing</th><th scope="col">ADI framing</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row" class="lab-name">Density</th>
-            <td class="si-cell">Follow these steps to find the density of each object, then record your results in the table provided.</td>
-            <td class="adi-cell">Here are five objects and a container of water. Which will float and which will sink — and what property actually decides that? Design a way to find out.</td>
-          </tr>
-          <tr>
-            <th scope="row" class="lab-name">Light</th>
-            <td class="si-cell">Measure the light intensity at each of the four listed distances from the lamp using the procedure below.</td>
-            <td class="adi-cell">As a light source moves farther from a surface, how does brightness change? You have a lamp, a light meter, and a metre stick — figure out the relationship yourself.</td>
-          </tr>
-          <tr>
-            <th scope="row" class="lab-name">Germination</th>
-            <td class="si-cell">Plant the seeds exactly as instructed, water on the schedule given, and record germination rate each day.</td>
-            <td class="adi-cell">You have seeds, soil, water, and access to light and dark spaces. What conditions make seeds germinate fastest? Decide what to test and how.</td>
-          </tr>
-          <tr>
-            <th scope="row" class="lab-name">Lamp power</th>
-            <td class="si-cell">Connect the circuit as diagrammed and record the lamp's brightness at each listed voltage.</td>
-            <td class="adi-cell">Here's a lamp, a battery, and some wire. What happens to how brightly it shines as the power supplied changes? Build a setup that lets you find out.</td>
-          </tr>
-          <tr>
-            <th scope="row" class="lab-name">Shade</th>
-            <td class="si-cell">Measure the shadow length at the three times of day specified and complete the data table.</td>
-            <td class="adi-cell">An object's shadow changes shape and length through the day. What's actually driving that change? You have a stick, chalk, and a sunny spot — investigate it.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="gate" style="border-left:4px solid var(--sage);cursor:default;margin-top:22px;">
+      <p class="gate-label" style="color:var(--sage);"><span class="lock">💡</span> WHERE'S THE TEACHER IN ALL THIS?</p>
+      <p class="gate-prompt" style="font-size:1.02rem;">It's tempting to hear "no procedure handed out" and picture students left entirely on their own. That's not what happened — and the difference matters.</p>
+      <p>Before any group touched a beaker, the teacher had already scaffolded the task: a bounded materials list (not "go find anything you want"), background reading on the topic, and — this is the part that's easy to miss — a fully teacher-led "explicit, reflective discussion" once the data was in, where the teacher openly connects what the class just did back to how science actually works. That's real, direct instruction. It just doesn't happen at the same moment as it does in the structured-inquiry room.</p>
+      <p style="margin-top:10px;"><b>Structured inquiry</b> front-loads its instruction: here's the procedure, now execute it. ADI holds most of its explicit teaching until <em>after</em> students have already generated their own data and built an argument from it. The scaffolding is real in both conditions — it's just aimed at different things. One scaffolds the doing. The other scaffolds the sense-making.</p>
     </div>
-    <p class="note">The exact prompt wording above is illustrative — written in the spirit of each condition, not quoted verbatim from the original lab handouts.</p>
+
+    <div class="gate" style="border-left:4px solid var(--amber);cursor:default;margin-top:22px;">
+      <p class="gate-label"><span class="lock">📋</span> EVERY GUIDING QUESTION GIVEN TO THE ADI GROUP</p>
+      <p style="margin-bottom:10px;">All five, exactly as the study frames them:</p>
+      <ul style="margin:0;padding-left:20px;line-height:1.9;">
+        <li><b>Density:</b> What are the identities of unknown matters?</li>
+        <li><b>Light:</b> What is the mechanism that causes refraction of light through a certain way?</li>
+        <li><b>Germination:</b> What are the factors affecting germination?</li>
+        <li><b>Power of lamp:</b> What are the factors affecting power of lamp?</li>
+        <li><b>Shade:</b> What are the factors affecting height of shade?</li>
+      </ul>
+    </div>
+    <p style="color:var(--ink-soft);margin-top:22px;">Now that you know what each move does — put them back in the order they actually happen.</p>
+
+    <div class="gate" id="gate-seq">
+      <p class="gate-label"><span class="lock">🔒</span> Click the moves in the order they actually happen</p>
+      <div class="seq-slots" id="seqSlots"></div>
+      <div class="seq-pool" id="seqPool"></div>
+      <p class="gate-status" id="seqStatus">✓ That's the ADI cycle, in order.</p>
+    </div>
   </section>
 
   <section class="panel" id="stage-3">
-    <p class="eyebrow">04 — RESULTS</p>
-    <h2>Both classes started even. Only one class moved.</h2>
-    <p class="lede">On the pre-test, before either treatment began, the two classes scored statistically the same. Ten weeks later, that had changed.</p>
-    <p class="note" style="margin-top:14px;">A quick key: <code>t(65)=3.20, p&lt;.05</code> means a difference large enough that it's unlikely to be due to chance. <b>n.s.</b> means "not significant" — the difference could easily be random noise. <b>d</b> is effect size — how large the gap is, not just whether it's real.</p>
+    <p class="eyebrow">04 — TWO CLASSROOMS, ONE VARIABLE</p>
+    <h2>Same content. Completely different experience.</h2>
+    <p class="lede">67 eighth graders, split into two classrooms, taught by the same teacher over the same ten weeks. Every lab topic — density, light, germination, lamp power, shade — was identical in both rooms. Even the background reading and materials list were the same in both. Only one thing changed: who decided how to actually run the investigation.</p>
+    <p style="color:var(--ink-soft);">Sort what each group actually experienced into the right condition.</p>
 
-    <div class="result-cards" style="margin-top:22px;">
-      <div class="result-card">
-        <p class="tag2">SCIENTIFIC LITERACY, POST-TEST</p>
-        <p class="big">ADI scored higher</p>
-        <p>Before any teaching happened, the two classes scored about the same on the literacy test — close enough to be chance (<code>t(65)=0.71</code>, n.s.). After ten weeks of the actual labs, that gap became real: the ADI class scored meaningfully higher than the structured-inquiry class (<code>t(65)=3.20</code>, p&lt;.05).</p>
+    <div class="gate" id="gate-sort2">
+      <p class="gate-label"><span class="lock">🔒</span> Select a chip, then click the matching condition</p>
+      <div class="sort-pool" id="sortPool2"></div>
+      <div class="sort-buckets" id="sortBuckets2">
+        <div class="bucket" data-bucket="si" role="button" tabindex="0">
+          <p class="bucket-label">Structured inquiry</p>
+          <div class="bucket-items"></div>
+        </div>
+        <div class="bucket" data-bucket="adi" role="button" tabindex="0">
+          <p class="bucket-label">Argument-Driven Inquiry</p>
+          <div class="bucket-items"></div>
+        </div>
       </div>
-      <div class="result-card">
-        <p class="tag2">WITHIN-GROUP CHANGE</p>
-        <p class="big">Only ADI improved</p>
-        <p>Looking at each class against its own starting point: the ADI group's scores rose by a large, statistically real margin (<code>t(33)=5.51</code>, d=3.62 — an unusually big effect). The structured-inquiry class's own scores barely moved at all (<code>t(32)=1.25</code>, n.s.).</p>
-      </div>
-      <div class="result-card">
-        <p class="tag2">MOTIVATION &amp; BELIEFS</p>
-        <p class="big">No group difference</p>
-        <p>This measures how much students said they valued science and how confident they felt doing it — not test performance. Both classes reported similar levels, before and after, with no statistically meaningful gap. Whatever ADI students gained, it wasn't extra enthusiasm for science.</p>
-      </div>
-      <div class="result-card">
-        <p class="tag2">THE ONE EXCEPTION</p>
-        <p class="big">Personal epistemology</p>
-        <p>One specific belief did shift more for ADI students: their sense of how certain or tentative scientific knowledge actually is. That gap was statistically real (<code>t(65)=3.05</code>, p&lt;.05), even though the broader belief measures above weren't.</p>
-      </div>
+      <p class="gate-status" id="sort2Status">✓ That's the whole design in one glance.</p>
     </div>
 
-    <h3 style="margin-top:32px;">What it felt like, in students' own words</h3>
-    <div class="quote-grid">
-      <div class="quote-card pos">
-        <div class="who">ADI<br>student</div>
-        <p>Several said inventing their own method was the hardest part of the lab — and also the part they enjoyed most, because it finally felt like doing real science instead of following steps.</p>
+    <h3 style="margin-top:30px;">Before anything else, the authors check: were the groups actually comparable?</h3>
+    <p>Any comparison between two intact classrooms only means something if the two groups weren't already different to begin with. So before looking at what changed, the authors first report where both classes stood on the pretest — before either condition began.</p>
+
+    <div class="barchart" style="margin-top:14px;">
+      <div class="barchart-group">
+        <div class="barchart-label"><span>SLA-D score, pre-test (X̄, out of 19)</span><span></span></div>
+        <div class="bar-row"><div class="bar-track"><div class="bar-fill si" style="width:40%"></div></div><span class="bar-value si">7.57</span></div>
+        <div class="bar-row"><div class="bar-track"><div class="bar-fill adi" style="width:40%"></div></div><span class="bar-value adi">7.61</span></div>
       </div>
-      <div class="quote-card pos">
-        <div class="who">ADI<br>student</div>
-        <p>One described being genuinely surprised that different groups, working from the exact same guiding question, reached different but equally defensible conclusions.</p>
-      </div>
-      <div class="quote-card trade">
-        <div class="who">ADI<br>student</div>
-        <p>Not everything landed well: some found writing the formal investigation report tedious, and a few questioned whether peer review from classmates was really fair.</p>
-      </div>
-      <div class="quote-card">
-        <div class="who">SI<br>student</div>
-        <p>Structured-inquiry students still reported genuinely enjoying the hands-on lab work — enjoyment, notably, wasn't what separated the two groups.</p>
-      </div>
+    </div>
+    <div class="barchart-legend">
+      <span><span class="legend-dot si"></span>Structured inquiry</span>
+      <span><span class="legend-dot adi"></span>Argument-Driven Inquiry</span>
+    </div>
+    <p class="note">Statistically indistinguishable (<code>t(65)=0.71</code>, n.s.) — the authors' basis for treating the two classes as comparable going in. What happens by the post-test is on the Results page ahead.</p>
+
+    <div class="gate" style="border-left:4px solid var(--rust);cursor:default;margin-top:22px;">
+      <p class="gate-label" style="color:var(--rust);"><span class="lock">⚠️</span> ONE DIFFERENCE THAT'S EASY TO MISS</p>
+      <p>"Comparable at the start" doesn't mean the only thing that differed afterward was the inquiry structure itself. Before any of this began, the ADI group specifically was taught how to construct a scientific argument — the components of one (claim, data, warrant, backing, rebuttal) and what separates a strong argument from a weak one. The comparison group received no equivalent instruction, because argumentation was never going to be asked of them.</p>
+      <p style="margin-top:10px;">That's worth holding onto going into the next step: explicit argumentation instruction is, on its own, a real intervention — separate from the open-ended investigation structure of ADI itself. Keep it in mind as you see how each condition actually ran.</p>
     </div>
   </section>
 
-  <section class="panel closing" id="stage-4">
-    <p class="eyebrow">05 — DISCUSSION</p>
-    <h2>Connecting ADI back to the larger inquiry-based learning conversation</h2>
-    <p class="lede">This ADI/SI comparison is one specific implementation. Pedaste et al. (2015) reviewed 32 studies and synthesized them into five general phases that most inquiry-based learning shares — here's how ADI's eight steps line up with that tradition.</p>
+  <section class="panel" id="stage-4">
+    <p class="eyebrow">05 — HOW EACH CONDITION ACTUALLY RAN</p>
+    <h2>What happened in the room, week by week</h2>
+    <p class="lede">"Different conditions" is easy to say. Here's what it actually looked like on the ground, lab session by lab session — because the details are where the real difference lives.</p>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th scope="col">Traditional phase (Pedaste et al.)</th><th scope="col">Where it shows up in ADI</th></tr>
-        </thead>
-        <tbody>
-          <tr><th scope="row" class="lab-name" style="white-space:normal;">Orientation</th><td class="si-cell">Step 1 — the guiding question, handed to students</td></tr>
-          <tr><th scope="row" class="lab-name" style="white-space:normal;">Conceptualization</th><td class="si-cell">Thin here — the question is given, not generated by students</td></tr>
-          <tr><th scope="row" class="lab-name" style="white-space:normal;">Investigation</th><td class="si-cell">Steps 2–3 — design, collect, interpret</td></tr>
-          <tr><th scope="row" class="lab-name" style="white-space:normal;">Conclusion</th><td class="si-cell">Step 6 — the investigation report</td></tr>
-          <tr><th scope="row" class="lab-name" style="white-space:normal;">Discussion</th><td class="si-cell">Steps 4, 5 &amp; 7 — argumentation, reflection, and peer review, not one step but three</td></tr>
-        </tbody>
-      </table>
+    <div class="gate" style="border-left:4px solid var(--rust);cursor:default;">
+      <p class="gate-label" style="color:var(--rust);"><span style="display:inline-block;width:11px;height:11px;background:var(--rust);border-radius:2px;"></span> LEGEND</p>
+      <p style="margin:0;">Steps highlighted in <span class="instr">orange-red, bold</span> are moments the teacher directly instructs students — explains, tells, or hands over an answer — rather than students working it out themselves. Both conditions have some; where they happen is the real difference.</p>
     </div>
 
-    <p style="margin-top:26px;">One detail from Pedaste et al.'s synthesis lines up neatly here. Across the 32 studies they reviewed, Discussion was never really a single closing step — it kept showing up throughout, both while the work was happening and afterward, looking back. That's likely why ADI builds in a discussion-shaped step three times rather than once at the end.</p>
-
-    <div class="callout" style="border-left-color:var(--sage);">
-      <p class="k">THE CONNECTION</p>
-      <p>ADI isn't a rival to traditional inquiry-based learning — it's one well-specified way of instantiating the same five phases researchers have been converging on for decades, with discussion woven through rather than left implicit.</p>
+    <div class="result-cards" style="margin-top:18px;">
+      <div class="result-card">
+        <p class="tag2">STRUCTURED INQUIRY, STEP BY STEP</p>
+        <p class="big" style="font-size:1.05rem;">The comparison classroom</p>
+        <ol style="margin:10px 0 0;padding-left:20px;color:var(--ink-soft);font-size:.92rem;line-height:1.7;">
+          <li>Instructor randomly sorts students into groups of 4–5.</li>
+          <li><span class="instr">Instructor hands out the full procedure, spelled out in steps</span>, along with background information, the purpose, the research question, and materials.</li>
+          <li>Groups follow the procedure to collect data and answer the research question. No decisions about method are left to them.</li>
+          <li>Groups submit a report covering the purpose, the answer, and the results.</li>
+          <li><span class="instr">The teacher collects every report and summarizes the results</span> at the front of the room.</li>
+          <li>A problem-solving session follows: students work a related question set alone, then <span class="instr">the teacher solves it on the board and explains the answer</span>.</li>
+        </ol>
+      </div>
+      <div class="result-card">
+        <p class="tag2">ARGUMENT-DRIVEN INQUIRY, STEP BY STEP</p>
+        <p class="big" style="font-size:1.05rem;">The experimental classroom</p>
+        <ol style="margin:10px 0 0;padding-left:20px;color:var(--ink-soft);font-size:.92rem;line-height:1.7;">
+          <li>Teacher randomly sorts students into smaller groups of 3–4.</li>
+          <li>Groups get the guiding question, background information, and a materials list — no procedure. They decide what to test and how.</li>
+          <li>Once they've collected enough data, groups analyze it and build a tentative argument: a claim, evidence, and justification.</li>
+          <li>Each group presents that argument on a large whiteboard. Other groups critique it — an argumentation session, not a report-out.</li>
+          <li><span class="instr">The teacher then leads an explicit, reflective discussion</span>, using what just happened to talk through how science actually works.</li>
+          <li>Each student — individually now, not as a group — writes an investigation report arguing their answer.</li>
+          <li>Reports are anonymized and swapped for double-blind peer review against a four-part rubric: goals, investigation, argument, writing.</li>
+          <li>Each student revises their own report based on that feedback.</li>
+        </ol>
+      </div>
     </div>
 
-    <h3 style="margin-top:30px;">What this means for your classroom</h3>
+    <p style="color:var(--ink-soft);margin-top:22px;">Sort a few more specifics into the condition they actually belonged to.</p>
+
+    <div class="gate" id="gate-sort3">
+      <p class="gate-label"><span class="lock">🔒</span> Select a chip, then click the matching condition</p>
+      <div class="sort-pool" id="sortPool3"></div>
+      <div class="sort-buckets" id="sortBuckets3">
+        <div class="bucket" data-bucket="si" role="button" tabindex="0">
+          <p class="bucket-label">Structured inquiry</p>
+          <div class="bucket-items"></div>
+        </div>
+        <div class="bucket" data-bucket="adi" role="button" tabindex="0">
+          <p class="bucket-label">Argument-Driven Inquiry</p>
+          <div class="bucket-items"></div>
+        </div>
+      </div>
+      <p class="gate-status" id="sort3Status">✓ That's the full procedural picture, not just the headline version.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="stage-5">
+    <p class="eyebrow">06 — TEN WEEKS LATER</p>
+    <h2>The moment of truth</h2>
+    <p class="lede">Step 4 showed the two classes started statistically even on the SLA-D pretest. Both classes also took the SLA-MB (the motivation-and-beliefs half of the assessment) before the ten weeks began. Now the real question: after ten weeks, did either score move — and in which direction?</p>
+
+    <div class="gate" id="gate-resultpredict">
+      <p class="gate-label"><span class="lock">🔒</span> Pick one, then the actual results unlock below</p>
+      <div class="quiz-opts" id="resultOpts">
+        <button class="quiz-opt" type="button" data-answer="true">ADI class scored significantly higher</button>
+        <button class="quiz-opt" type="button" data-answer="false">Structured-inquiry class scored significantly higher</button>
+        <button class="quiz-opt" type="button" data-answer="false">No real difference between them</button>
+      </div>
+      <div class="gate-feedback neutral" id="resultFb"></div>
+    </div>
+
+    <div id="resultsReveal" style="display:none;margin-top:24px;">
+      <div class="result-cards">
+        <div class="result-card">
+          <p class="tag2">SLA-D, POST-TEST</p>
+          <p class="big">ADI scored higher</p>
+          <p>After ten weeks, ADI's SLA-D mean reached 11.5 vs. 8.60 for structured inquiry, out of 19 (<code>t(65)=3.20</code>, p&lt;.05) — the two classes had been statistically even on this same measure at the start (Step 4).</p>
+        </div>
+        <div class="result-card">
+          <p class="tag2">WITHIN-GROUP CHANGE</p>
+          <p class="big">Only ADI's SLA-D moved</p>
+          <p>ADI's own SLA-D mean rose from 7.61 to 11.4 across the ten weeks (<code>t(33)=5.51</code>, d=0.95). Structured inquiry's own SLA-D mean barely moved: 7.57 to 8.60 (<code>t(32)=1.25</code>, n.s.).</p>
+        </div>
+        <div class="result-card">
+          <p class="tag2">SLA-MB, OVERALL</p>
+          <p class="big">No group difference</p>
+          <p>Overall SLA-MB means (motivation and beliefs combined) stayed close — 87.4 to 93.3 (ADI) vs. 88.2 to 89.9 (SI), out of 125 (<code>t(65)=1.35</code>, n.s.). Enthusiasm wasn't the differentiator.</p>
+        </div>
+        <div class="result-card">
+          <p class="tag2">SLA-MB, ONE SUBSCALE</p>
+          <p class="big">Personal epistemology</p>
+          <p>Of the three SLA-MB subscales, only this one showed a group difference: ADI's mean rose from 31.5 to 37.3 out of 55; structured inquiry moved from 30.3 to just 31.3 (<code>t(65)=3.05</code>, p&lt;.05).</p>
+        </div>
+      </div>
+
+      <h3 style="margin-top:28px;">SLA-D, post-test — Table 3</h3>
+      <div class="barchart" style="margin-top:14px;">
+        <div class="barchart-group">
+          <div class="barchart-label"><span>SLA-D score, post-test (X̄, out of 19)</span><span></span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill si" style="width:45%"></div></div><span class="bar-value si">8.60</span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill adi" style="width:61%"></div></div><span class="bar-value adi">11.5</span></div>
+        </div>
+      </div>
+      <div class="barchart-legend">
+        <span><span class="legend-dot si"></span>Structured inquiry</span>
+        <span><span class="legend-dot adi"></span>Argument-Driven Inquiry</span>
+      </div>
+      <p class="note">Pre-test bars for this same measure are on the previous step — both classes started at ~7.6 out of 19.</p>
+
+      <h3 style="margin-top:30px;">Personal epistemology, in more depth — Table 9</h3>
+      <div class="barchart" style="margin-top:14px;">
+        <div class="barchart-group">
+          <div class="barchart-label"><span>Personal epistemology score (X̄, out of 55)</span><span></span></div>
+          <div class="barchart-label" style="margin-bottom:-2px;"><span style="font-size:.72rem;">Pre-test</span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill si" style="width:55%"></div></div><span class="bar-value si">30.3</span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill adi" style="width:57%"></div></div><span class="bar-value adi">31.5</span></div>
+          <div class="barchart-label" style="margin-bottom:-2px;margin-top:6px;"><span style="font-size:.72rem;">Post-test</span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill si" style="width:57%"></div></div><span class="bar-value si">31.3</span></div>
+          <div class="bar-row"><div class="bar-track"><div class="bar-fill adi" style="width:68%"></div></div><span class="bar-value adi">37.3</span></div>
+        </div>
+      </div>
+      <div class="barchart-legend">
+        <span><span class="legend-dot si"></span>Structured inquiry</span>
+        <span><span class="legend-dot adi"></span>Argument-Driven Inquiry</span>
+      </div>
+
+      <div class="gate" style="border-left:4px solid var(--sage);cursor:default;margin-top:22px;">
+        <p class="gate-label" style="color:var(--sage);"><span class="lock">💡</span> WHAT "PERSONAL EPISTEMOLOGY" ACTUALLY MEANS</p>
+        <p>Personal epistemology refers to a person's beliefs about the nature of knowledge and the process of knowing (Hofer &amp; Pintrich, 1997). On the SLA-MB, this subscale is measured through items about the truth of scientific knowledge, the certainty of scientific knowledge, and trusting what scientists say — in other words, whether a student sees scientific knowledge as fixed and handed-down, or as something built, tested, and revised.</p>
+        <p style="margin-top:10px;">This is also the subscale most directly tied to what ADI adds on top of ordinary inquiry: the argumentation sessions specifically. A body of research connects engaging in argumentative activity to exactly this kind of shift in students' epistemological beliefs (Kuhn et al., 2008; Nussbaum &amp; Bendixen, 2003; Tytler &amp; Peterson, 2003). That's a more specific claim than "inquiry-based learning changes beliefs about science" — it points at argumentation in particular, not the open-ended investigation structure on its own, as the likely driver of this one result.</p>
+      </div>
+
+      <p class="note" style="margin-top:18px;">Bar widths are scaled to each scale's real ceiling (19 points for SLA-D, 55 for the personal-epistemology subscale) — not stretched for drama. Means (X̄) and SDs are from Tables 3 and 9; a fuller table also appears in Table 4 (paired analysis) and Table 8 (overall SLA-MB), with slightly different rounding on the ADI post-SLA-D mean (11.4 vs. 11.5) that appears to be a rounding artifact in the original tables rather than a real discrepancy.</p>
+      <p class="note"><code>p&lt;.05</code> means the gap is large enough to be unlikely due to chance. <code>n.s.</code> ("not significant") means it could easily just be noise. <code>d</code> is effect size — how big the gap is, not just whether it's real.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="stage-6">
+    <p class="eyebrow">07 — THE BIGGER PICTURE</p>
+    <h2>ADI didn't invent this. It's a version of something older.</h2>
+    <p class="lede">In 2015, a team led by Margus Pedaste reviewed 32 different studies of inquiry-based learning and found the same five phases showing up again and again, just under different names. Here's what each one actually means, in the researchers' own framing:</p>
+    <p class="note" style="margin-top:0;">The "Article" button at the top now points to this paper specifically — Pedaste et al. (2015) — rather than Eymur &amp; Çetin. It'll switch back once you move past this step.</p>
+
+    <div class="phase-cards">
+      <div class="phase-card">
+        <span class="phase-icon">🧭</span>
+        <div><p class="tag2">PHASE 1 — ORIENTATION</p>
+        <p>Sparking curiosity and putting a problem in front of students — the moment before any real thinking starts.</p></div>
+      </div>
+      <div class="phase-card">
+        <span class="phase-icon">💭</span>
+        <div><p class="tag2">PHASE 2 — CONCEPTUALIZATION</p>
+        <p>Turning that curiosity into an actual, answerable question — or a hypothesis, if there's enough background knowledge to guess at an answer first.</p></div>
+      </div>
+      <div class="phase-card">
+        <span class="phase-icon">🔍</span>
+        <div><p class="tag2">PHASE 3 — INVESTIGATION</p>
+        <p>Planning a method, collecting data, and making sense of it — turning curiosity into action.</p></div>
+      </div>
+      <div class="phase-card">
+        <span class="phase-icon">✅</span>
+        <div><p class="tag2">PHASE 4 — CONCLUSION</p>
+        <p>Stating what the data actually support, checked against the original question.</p></div>
+      </div>
+      <div class="phase-card">
+        <span class="phase-icon">💬</span>
+        <div><p class="tag2">PHASE 5 — DISCUSSION</p>
+        <p>Communicating findings to others and reflecting on the process itself. Pedaste's team found this one wasn't a single closing step in most studies — it kept showing up throughout, not just at the end.</p></div>
+      </div>
+    </div>
+
+    <div class="gate" style="border-left:4px solid var(--sage);cursor:default;margin-top:22px;">
+      <p class="gate-label" style="color:var(--sage);"><span class="lock">💡</span> A NUANCE WORTH SITTING WITH: CONCEPTUALIZATION</p>
+      <p>In Pedaste's framework, Conceptualization is usually the phase where students turn their own curiosity into a question. In ADI, the guiding question is handed to students by the teacher — you saw all five of them back in Step 3. That could look like a shortcut, or a gap. It's neither.</p>
+      <p style="margin-top:10px;">Handing over a well-formed guiding question is itself a scaffolding move — the same kind of teacher support discussed in Step 3, just applied to Conceptualization instead of Investigation. It narrows an unbounded problem space down to something a group of eighth graders can actually design a method for, in the time available, with the materials on hand. The phase isn't skipped or thinned out; it's front-loaded by the teacher so the harder cognitive work — designing the investigation and building the argument — has room to happen later.</p>
+    </div>
+
+    <p style="margin-top:22px;color:var(--ink-soft);">With that in mind — match each phase to where it actually shows up inside ADI.</p>
+
+    <div class="gate" id="gate-match">
+      <p class="gate-label"><span class="lock">🔒</span> Click a phase, then click its ADI match</p>
+      <div class="match-grid">
+        <div>
+          <p class="match-col-label">TRADITIONAL PHASE</p>
+          <div id="matchLeft"></div>
+        </div>
+        <div>
+          <p class="match-col-label">SHOWS UP IN ADI AS</p>
+          <div id="matchRight"></div>
+        </div>
+      </div>
+      <p class="gate-status" id="matchStatus">✓ All matched — discussion shows up three times, not once.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="stage-7">
+    <p class="eyebrow">08 — THINK LIKE A LEARNING SCIENTIST</p>
+    <h2>Statistically real. What else could explain it?</h2>
+    <p class="lede">Everything so far has pointed the same direction: ADI worked. But a good reader doesn't stop at "the p-value was small" — they ask what else, besides the thing being tested, could have produced the same result. Work through the catch below, then two more worth sitting with.</p>
+
+    <div class="gate" id="gate-critique">
+      <p class="gate-label"><span class="lock">🔒</span> CATCH — True or false?</p>
+      <p class="gate-prompt">"Because the pretest showed no significant difference between groups (<code>t(65)=0.71</code>, n.s.), we can be confident the two classes started out truly equivalent."</p>
+      <div class="quiz-opts" id="critiqueOpts">
+        <button class="quiz-opt" type="button" data-answer="false">True</button>
+        <button class="quiz-opt" type="button" data-answer="true">False</button>
+      </div>
+      <div class="gate-feedback" id="critiqueFb"></div>
+    </div>
+
+    <div class="gate" style="border-left:4px solid var(--sage);cursor:default;margin-top:18px;">
+      <p class="gate-label" style="color:var(--sage);"><span class="lock">💡</span> STATISTICAL VS. PRACTICAL SIGNIFICANCE</p>
+      <p>A p-value answers one narrow question: <em>is this gap probably not random noise?</em> It says nothing about whether the gap is large enough to matter, or whether it would hold up if tried by a different teacher in a different room. Those are separate questions, and a study can have one without the other.</p>
+      <p style="margin-top:10px;">The reported effect size is worth a look either way: <code>d=0.95</code> for the ADI group's own pre-to-post gain. In education research, an effect size around 0.4 is often treated as a genuinely strong result; 0.95 is well above that. From a single classroom of about 34 students, over one short unit, that's a real and sizable effect — and also exactly the kind of result worth asking "what else could produce this?" about, which is what the next two callouts do.</p>
+    </div>
+
+    <div class="gate" style="border-left:4px solid var(--rust);cursor:default;margin-top:18px;">
+      <p class="gate-label" style="color:var(--rust);"><span class="lock">⚠️</span> THE SAME TEACHER TAUGHT BOTH CONDITIONS — GOOD NEWS AND BAD NEWS</p>
+      <p>Using one teacher for both classes is a real design strength: it rules out a whole category of confound where differences in teaching style, rapport, or grading habits between two different teachers could explain the gap instead of the method itself.</p>
+      <p style="margin-top:10px;">But that same teacher spent four months training specifically in ADI before the study began (Step 2). It's a fair question whether that investment shaped how they delivered the <em>other</em> condition — a teacher who has just spent months getting comfortable with argumentation may not bring the same energy to explaining a procedure on a whiteboard. The paper doesn't report anything that would let a reader rule this out either way. Controlling for teacher identity isn't the same as controlling for teacher bias.</p>
+    </div>
+
+    <div class="gate" style="border-left:4px solid var(--rust);cursor:default;margin-top:18px;">
+      <p class="gate-label" style="color:var(--rust);"><span class="lock">⚠️</span> WHAT ELSE MIGHT THE ARGUMENTATION TRAINING HAVE DONE?</p>
+      <p>Back in Step 4: before the study began, the ADI group specifically was taught the components of a scientific argument and what separates a strong one from a weak one. The comparison group got no equivalent instruction. Personal epistemology — beliefs about the nature of scientific knowledge — is the one belief measure that moved (Step 6).</p>
+      <p style="margin-top:10px;">Worth asking directly: is it the open-ended investigation structure of ADI that shifted those beliefs, or the argumentation training itself, on its own? The study never tests whether giving the structured-inquiry group that same explicit argumentation instruction — without changing anything else about their condition — would have moved their epistemology scores too. As designed, the study can't separate "ADI as a whole" from "explicit argumentation instruction" as the actual driver of this one result.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="stage-8">
+    <p class="eyebrow">09 — THE AUTHORS' OWN CONCLUSION</p>
+    <h2>What Eymur and Çetin actually concluded</h2>
+    <p class="lede">Not a takeaway drawn for the reader — this is the argument the researchers themselves make in their Discussion and Limitations sections.</p>
+
+    <h3 style="margin-top:26px;">Their conclusion</h3>
+    <p>The authors state plainly that the ADI model supported students' scientific literacy more than structured inquiry did. Their explanation centers on what ADI actually asked of students beyond just running an experiment: building an argument from claim, evidence, and justification, defending it in the argumentation session, and writing it up as a formal investigation report. In their view, it's this combination of talk and scientific writing — not the lab activities themselves — that drove the gain.</p>
+    <p style="margin-top:10px;">Their closing position is a general one: they argue that scientific practices like ADI should be used specifically because they have students <em>doing</em> science, not just acquiring conceptual understanding of it — and that this distinction is what makes students scientifically literate.</p>
+
+    <h3 style="margin-top:28px;">Their own stated limitations</h3>
+    <p>The authors list three limitations themselves, without prompting:</p>
     <ul class="takeaway-list">
-      <li>Give students a guiding question and materials, not a fixed procedure, and let them design the method.</li>
-      <li>Build in a real argumentation step — students defending a claim to peers who can push back.</li>
-      <li>Follow with explicit reflection on how the investigation itself worked, not just what the answer was.</li>
-      <li>Close the loop with writing and peer review.</li>
+      <li>The study involved a limited number of students and a single context — they explicitly call for further studies to establish generalizability and validity across different grades and settings.</li>
+      <li>Ten weeks may not have been enough time to produce meaningful change in students' scientific literacy — the authors raise this themselves as an open question, not a settled one.</li>
+      <li>The study was carried out by a researcher already experienced in the ADI model — the authors note directly that its effectiveness should be considered with that in mind by teachers who are new to it.</li>
     </ul>
+  </section>
 
-    <p class="caveat">Eymur, G. &amp; Çetin, P. S. (2024). <em>Investigating the role of an inquiry-based science lab on students' scientific literacy.</em> Instructional Science, 52, 743–760. <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener">doi.org/10.1007/s11251-024-09672-w</a> — one quasi-experimental study conducted in a real classroom, so treat the specific numbers as suggestive rather than conclusive.</p>
-    <p class="caveat">Pedaste, M., Mäeots, M., Siiman, L. A., de Jong, T., van Riesen, S. A. N., Kamp, E. T., Manoli, C. C., Zacharia, Z. C., &amp; Tsourlidaki, E. (2015). <em>Phases of inquiry-based learning: Definitions and the inquiry cycle.</em> Educational Research Review, 14, 47–61. <a href="https://doi.org/10.1016/j.edurev.2015.02.003" target="_blank" rel="noopener">doi.org/10.1016/j.edurev.2015.02.003</a></p>
+  <section class="panel" id="stage-9">
+    <p class="eyebrow">10 — LET'S DISCUSS</p>
+    <h2>One last comparison, before you go</h2>
+
+    <div class="gate" style="border-left:4px solid var(--amber);cursor:default;">
+      <p class="gate-label"><span class="lock">📝</span> DISCUSSION PROMPT — ANSWER ON iCOLLEGE</p>
+      <p style="font-family:var(--serif);font-weight:700;font-size:1.55rem;line-height:1.35;margin:0 0 18px;">Compare Eymur &amp; Çetin to Gutstein's (2016) study of critical mathematics in a Chicago neighborhood high school. Both are inquiry-based, but the starting point is different — one social, one disciplinary. How might that difference affect what students take away?</p>
+      <p style="color:var(--ink-soft);">Gutstein's students investigate community issues through math. Eymur &amp; Çetin's students design their own science experiments and defend their findings.</p>
+      <p class="note" style="margin-top:16px;">This activity doesn't collect an answer — leave this page and post your response to this prompt on iCollege. Before you go: the <b>Glossary</b> button at the top of the page still works if you need a definition while you write, and the <b>Previous</b> button below can take you back through any step of this walkthrough if you want to revisit something from Eymur &amp; Çetin before answering.</p>
+    </div>
+
+    <h3 style="margin-top:30px;">References</h3>
+    <p class="caveat">Eymur, G. &amp; Çetin, P. S. (2024). Investigating the role of an inquiry-based science lab on students' scientific literacy. <em>Instructional Science, 52</em>, 743–760. <a href="https://doi.org/10.1007/s11251-024-09672-w" target="_blank" rel="noopener">doi.org/10.1007/s11251-024-09672-w</a></p>
+    <p class="caveat">Pedaste, M., Mäeots, M., Siiman, L. A., de Jong, T., van Riesen, S. A. N., Kamp, E. T., Manoli, C. C., Zacharia, Z. C., &amp; Tsourlidaki, E. (2015). Phases of inquiry-based learning: Definitions and the inquiry cycle. <em>Educational Research Review, 14</em>, 47–61. <a href="https://doi.org/10.1016/j.edurev.2015.02.003" target="_blank" rel="noopener">doi.org/10.1016/j.edurev.2015.02.003</a></p>
+    <p class="caveat">Sampson, V., Grooms, J., &amp; Walker, J. (2009). Argument-Driven Inquiry to promote learning and interdisciplinary work in science classrooms. <em>The Science Teacher, 76</em>(8), 42–47.</p>
+    <p class="caveat">Gutstein, E. "Rico." (2016). "Our Issues, Our People—Math as Our Weapon": Critical Mathematics in a Chicago Neighborhood High School. <em>Journal for Research in Mathematics Education, 47</em>(5), 454–504. <a href="https://doi.org/10.5951/jresematheduc.47.5.0454" target="_blank" rel="noopener">doi.org/10.5951/jresematheduc.47.5.0454</a></p>
   </section>
 
 </div>
@@ -480,13 +670,13 @@
 <div class="bottom-bar">
   <nav class="pager" id="pager" aria-label="Story navigation">
     <button class="btn btn-ghost" id="prevBtn" type="button" aria-label="Previous step">← <span class="full" aria-hidden="true">Previous</span></button>
-    <span class="step-label" id="stepLabel">Step 1 of 8</span>
-    <button class="btn" id="nextBtn" type="button" aria-label="Next step"><span class="full" aria-hidden="true">Next</span> →</button>
+    <span class="step-label" id="stepLabel">Step 1 of 10</span>
+    <button class="btn" id="nextBtn" type="button" aria-label="Next step" disabled><span class="full" aria-hidden="true">Next</span> →</button>
   </nav>
   <footer class="site-footer">
-    <p>A guided walkthrough of Eymur &amp; Çetin (2024), built from the published study</p>
-    <p class="ack">Created by Joe Fernander, with acknowledgement to Claude AI (Anthropic) for research synthesis and page development.</p>
-    <p>Last updated September 16, 2026 — conversation turn 26</p>
+    <p>An interactive, scaffolded walkthrough of Eymur &amp; Çetin (2024), built from the published study</p>
+    <p>Created by Joe Fernander, with acknowledgement to Claude AI (Anthropic) for research synthesis and page development.</p>
+    <p>Last updated September 16, 2026 — conversation turn 54</p>
   </footer>
 </div>
 
@@ -498,58 +688,391 @@
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const stepLabel = document.getElementById('stepLabel');
+  const startBtn = document.getElementById('startBtn');
+
+  const gateDone = new Array(stages.length).fill(false);
+  gateDone[8] = true; // "Authors' Own Conclusion" is plain reading content, no gate to clear
+  gateDone[stages.length - 1] = true; // final panel ("Let's Discuss") is plain content, no gate to clear
 
   stages.forEach((s, i) => {
     const b = document.createElement('button');
-    b.setAttribute('aria-label', 'Go to step ' + (i + 1));
-    b.addEventListener('click', () => showStep(i));
+    b.setAttribute('aria-label', 'Step ' + (i + 1));
+    b.addEventListener('click', () => { if (gateDone[i] || i <= currentIndex) showStep(i); });
     dotsWrap.appendChild(b);
   });
   const dotButtons = [...dotsWrap.children];
 
   let currentIndex = 0;
 
-  function animateBars(panel){
-    panel.querySelectorAll('.bar-fill').forEach(el => {
-      const target = el.getAttribute('data-target');
-      requestAnimationFrame(() => { el.style.width = target + '%'; });
-    });
-    panel.querySelectorAll('.bar-value').forEach(el => {
-      const target = parseInt(el.getAttribute('data-target'), 10);
-      const duration = 700;
-      const start = performance.now();
-      function tick(now){
-        const progress = Math.min(1, (now - start) / duration);
-        el.textContent = Math.round(target * progress);
-        if (progress < 1) requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
-    });
-  }
-
   function showStep(i){
     currentIndex = Math.max(0, Math.min(stages.length - 1, i));
     stages.forEach((s, idx) => { s.style.display = (idx === currentIndex) ? 'block' : 'none'; });
     window.scrollTo({top: 0, behavior: 'auto'});
     updateNav();
-    animateBars(stages[currentIndex]);
+    updateArticleLink();
   }
-
+  function updateArticleLink(){
+    const link = document.getElementById('articleLink');
+    const label = document.getElementById('articleLinkLabel');
+    if (stages[currentIndex] && stages[currentIndex].id === 'stage-6') {
+      link.href = 'https://doi.org/10.1016/j.edurev.2015.02.003';
+      label.textContent = 'Pedaste et al. (2015)';
+      link.setAttribute('aria-label', 'Read Pedaste et al. (2015) (opens in a new tab)');
+    } else {
+      link.href = 'https://doi.org/10.1007/s11251-024-09672-w';
+      label.textContent = 'Eymur & Çetin (2024)';
+      link.setAttribute('aria-label', 'Read Eymur & Çetin (2024) (opens in a new tab)');
+    }
+  }
+  function unlock(i){
+    gateDone[i] = true;
+    updateNav();
+  }
   function updateNav(){
     prevBtn.disabled = currentIndex === 0;
-    nextBtn.disabled = currentIndex === stages.length - 1;
     const isLast = currentIndex === stages.length - 1;
+    const canAdvance = gateDone[currentIndex];
+    nextBtn.disabled = isLast || !canAdvance;
     nextBtn.querySelector('.full').textContent = isLast ? 'Done' : 'Next';
     nextBtn.lastChild.textContent = isLast ? '' : ' →';
-    nextBtn.setAttribute('aria-label', isLast ? 'Done — this is the last step' : 'Next step');
+    nextBtn.setAttribute('aria-label', isLast ? 'Done — this is the last step' : (canAdvance ? 'Next step' : 'Complete this step to continue'));
     stepLabel.textContent = `Step ${currentIndex + 1} of ${stages.length}`;
     railFill.style.width = (currentIndex / (stages.length - 1)) * 100 + '%';
-    dotButtons.forEach((b, i) => b.setAttribute('aria-current', String(i === currentIndex)));
+    dotButtons.forEach((b, i) => {
+      b.setAttribute('aria-current', String(i === currentIndex));
+      b.setAttribute('data-done', String(gateDone[i]));
+    });
   }
-
   prevBtn.addEventListener('click', () => showStep(currentIndex - 1));
   nextBtn.addEventListener('click', () => showStep(currentIndex + 1));
-  document.getElementById('startBtn').addEventListener('click', () => showStep(1));
+
+  // ---------- Gate 0: predict quiz (hero) ----------
+  const predictOpts = document.querySelectorAll('#predictOpts .quiz-opt');
+  const predictFb = document.getElementById('predictFb');
+  const predictStatus = document.getElementById('predictStatus');
+  predictOpts.forEach(btn => {
+    btn.addEventListener('click', () => {
+      predictOpts.forEach(b => { b.disabled = true; b.setAttribute('data-picked', b === btn ? 'true' : 'false'); });
+      predictFb.textContent = btn.getAttribute('data-fb');
+      predictFb.classList.add('show');
+      predictStatus.classList.add('show');
+      startBtn.disabled = false;
+    });
+  });
+  startBtn.addEventListener('click', () => { unlock(0); showStep(1); });
+
+  // ---------- Shared drag helper (pointer events: works for mouse, touch, pen) ----------
+  function makeDraggable(chip, onRelease, dropZoneSelector){
+    let dragging = false;
+    let startX, startY, offsetX, offsetY;
+    let originParent = null, originNext = null;
+    let currentZone = null;
+
+    chip.addEventListener('pointerdown', (e) => {
+      if (chip.disabled) return;
+      startX = e.clientX; startY = e.clientY;
+      originParent = chip.parentNode;
+      originNext = chip.nextSibling;
+      const rect = chip.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      dragging = false;
+      try { chip.setPointerCapture(e.pointerId); } catch(err){}
+
+      function onMove(ev){
+        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (!dragging && Math.hypot(dx, dy) > 6) {
+          dragging = true;
+          chip.classList.add('dragging');
+          document.body.appendChild(chip);
+          chip.style.position = 'fixed';
+          chip.style.zIndex = 1000;
+        }
+        if (dragging) {
+          chip.style.left = (ev.clientX - offsetX) + 'px';
+          chip.style.top = (ev.clientY - offsetY) + 'px';
+          chip.style.pointerEvents = 'none';
+          const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+          chip.style.pointerEvents = '';
+          const zone = hit && hit.closest ? hit.closest(dropZoneSelector) : null;
+          if (zone !== currentZone) {
+            if (currentZone) currentZone.classList.remove('drag-over');
+            if (zone) zone.classList.add('drag-over');
+            currentZone = zone;
+          }
+        }
+      }
+      function onUp(ev){
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        try { chip.releasePointerCapture(ev.pointerId); } catch(err){}
+        if (currentZone) currentZone.classList.remove('drag-over');
+        if (dragging) {
+          chip.classList.remove('dragging');
+          chip.style.position = '';
+          chip.style.left = '';
+          chip.style.top = '';
+          chip.style.zIndex = '';
+          chip.style.pointerEvents = '';
+          if (originNext) originParent.insertBefore(chip, originNext); else originParent.appendChild(chip);
+          const dropZone = currentZone;
+          currentZone = null;
+          onRelease(dropZone);
+        }
+        dragging = false;
+      }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  }
+
+  // ---------- Generic sort-game builder ----------
+  function buildSort(poolId, bucketsWrapId, items, statusId, gateIndex){
+    const pool = document.getElementById(poolId);
+    const bucketsWrap = document.getElementById(bucketsWrapId);
+    const buckets = [...bucketsWrap.querySelectorAll('.bucket')];
+    let selected = null;
+    let remaining = items.length;
+
+    function place(chip, bucket){
+      if (chip.dataset.bucket === bucket.dataset.bucket) {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'bucket-item';
+        itemEl.textContent = '✓ ' + chip.textContent;
+        bucket.querySelector('.bucket-items').appendChild(itemEl);
+        chip.remove();
+        if (selected === chip) selected = null;
+        remaining--;
+        if (remaining === 0) {
+          document.getElementById(statusId).classList.add('show');
+          unlock(gateIndex);
+        }
+      } else {
+        chip.classList.add('shake');
+        setTimeout(() => chip.classList.remove('shake'), 400);
+      }
+    }
+
+    items.forEach(item => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'sort-chip';
+      chip.textContent = item.text;
+      chip.dataset.bucket = item.bucket;
+      chip.addEventListener('click', () => {
+        pool.querySelectorAll('.sort-chip').forEach(c => c.setAttribute('data-selected', 'false'));
+        selected = chip;
+        chip.setAttribute('data-selected', 'true');
+      });
+      makeDraggable(chip, (bucket) => { if (bucket) place(chip, bucket); }, '.bucket');
+      pool.appendChild(chip);
+    });
+
+    buckets.forEach(bucket => {
+      function handleActivate(){
+        if (!selected) return;
+        place(selected, bucket);
+      }
+      bucket.addEventListener('click', handleActivate);
+      bucket.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleActivate(); } });
+    });
+  }
+
+  buildSort('sortPool1', 'sortBuckets1', [
+    {text:'Real public-school classroom', bucket:'classroom'},
+    {text:'Subjects randomly assigned to condition', bucket:'lab'},
+    {text:"Students' own regular teacher", bucket:'classroom'},
+    {text:'Tight control over every variable but one', bucket:'lab'},
+    {text:'Folded into a 10-week curriculum unit', bucket:'classroom'},
+    {text:'Two intact, pre-existing classes compared', bucket:'classroom'}
+  ], 'sort1Status', 1);
+
+  buildSort('sortPool2', 'sortBuckets2', [
+    {text:'Step-by-step procedure handed out', bucket:'si'},
+    {text:'Only a guiding question given', bucket:'adi'},
+    {text:'Teacher-decided variables', bucket:'si'},
+    {text:'Students design their own method', bucket:'adi'},
+    {text:'Follow instructions, record data', bucket:'si'},
+    {text:'Defend a claim to classmates', bucket:'adi'}
+  ], 'sort2Status', 3);
+
+  buildSort('sortPool3', 'sortBuckets3', [
+    {text:'Teacher summarizes results at the front', bucket:'si'},
+    {text:'Whiteboard argumentation session', bucket:'adi'},
+    {text:'Report covers purpose, answer, and results', bucket:'si'},
+    {text:'Individual report, double-blind peer reviewed', bucket:'adi'},
+    {text:'Teacher solves practice problems on the board', bucket:'si'},
+    {text:'Report gets revised after peer feedback', bucket:'adi'}
+  ], 'sort3Status', 4);
+
+  // ---------- Gate: sequence ----------
+  (function(){
+    const correctOrder = ['Design & investigate', 'Argue & reflect', 'Write', 'Review & revise'];
+    const shuffled = ['Write', 'Design & investigate', 'Review & revise', 'Argue & reflect'];
+    const slotsWrap = document.getElementById('seqSlots');
+    const poolWrap = document.getElementById('seqPool');
+    let nextExpected = 0;
+
+    correctOrder.forEach((_, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'seq-slot';
+      slot.textContent = `Move ${i + 1}`;
+      slotsWrap.appendChild(slot);
+    });
+    const slotEls = [...slotsWrap.children];
+
+    function attempt(chip, text){
+      if (text === correctOrder[nextExpected]) {
+        slotEls[nextExpected].textContent = text;
+        slotEls[nextExpected].classList.add('filled');
+        chip.remove();
+        nextExpected++;
+        if (nextExpected === correctOrder.length) {
+          document.getElementById('seqStatus').classList.add('show');
+          unlock(2);
+        }
+      } else {
+        chip.classList.add('shake');
+        setTimeout(() => chip.classList.remove('shake'), 400);
+      }
+    }
+
+    shuffled.forEach(text => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'sort-chip';
+      chip.textContent = text;
+      chip.addEventListener('click', () => attempt(chip, text));
+      makeDraggable(chip, (zone) => { if (zone) attempt(chip, text); }, '#seqSlots');
+      poolWrap.appendChild(chip);
+    });
+  })();
+
+  // ---------- Gate: results predict then reveal ----------
+  (function(){
+    const opts = document.querySelectorAll('#resultOpts .quiz-opt');
+    const fb = document.getElementById('resultFb');
+    opts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isCorrect = btn.getAttribute('data-answer') === 'true';
+        opts.forEach(b => {
+          b.disabled = true;
+          if (b.getAttribute('data-answer') === 'true') b.setAttribute('data-correct', 'true');
+          else if (b === btn) b.setAttribute('data-wrong', 'true');
+        });
+        if (isCorrect) {
+          fb.textContent = "✓ You called it. The ADI class scored significantly higher on the post-test (t(65)=3.20, p<.05) — even though the two classes had started out statistically even (t(65)=0.71, n.s.). Their own scores rose sharply across the ten weeks (t(33)=5.51, d=0.95); the structured-inquiry class's own scores barely moved (t(32)=1.25, n.s.). Full breakdown below.";
+        } else {
+          fb.textContent = "Not quite — here's what actually happened. The ADI class scored significantly higher on the post-test (t(65)=3.20, p<.05), despite starting out statistically even with the other class (t(65)=0.71, n.s.). Their own scores rose sharply over the ten weeks (t(33)=5.51, d=0.95); the structured-inquiry class's own scores barely moved (t(32)=1.25, n.s.). Full breakdown below.";
+        }
+        fb.className = isCorrect ? 'gate-feedback show correct' : 'gate-feedback show incorrect';
+        document.getElementById('resultsReveal').style.display = 'block';
+        unlock(5);
+      });
+    });
+  })();
+
+  // ---------- Gate: match ----------
+  (function(){
+    const pairs = [
+      {left:'Orientation', icon:'🧭', right:'The guiding question, handed to students'},
+      {left:'Conceptualization', icon:'💭', right:'Scaffolded — the guiding question, given by the teacher'},
+      {left:'Investigation', icon:'🔍', right:'Design & investigate'},
+      {left:'Conclusion', icon:'✅', right:'Write the report'},
+      {left:'Discussion', icon:'💬', right:'Argue, reflect, and peer review'}
+    ];
+    const leftWrap = document.getElementById('matchLeft');
+    const rightWrap = document.getElementById('matchRight');
+    const rightShuffled = [...pairs].sort(() => Math.random() - 0.5);
+    let selectedLeft = null;
+    let matchedCount = 0;
+
+    pairs.forEach(p => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'match-item';
+      el.innerHTML = `<span class="match-icon" aria-hidden="true">${p.icon}</span>${p.left}`;
+      el.dataset.key = p.left;
+      el.addEventListener('click', () => {
+        if (el.dataset.matched === 'true') return;
+        leftWrap.querySelectorAll('.match-item').forEach(x => x.setAttribute('data-selected', 'false'));
+        selectedLeft = el;
+        el.setAttribute('data-selected', 'true');
+      });
+      leftWrap.appendChild(el);
+    });
+
+    rightShuffled.forEach(p => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'match-item';
+      el.textContent = p.right;
+      el.dataset.key = p.left;
+      el.addEventListener('click', () => {
+        if (el.dataset.matched === 'true' || !selectedLeft) return;
+        if (el.dataset.key === selectedLeft.dataset.key) {
+          el.setAttribute('data-matched', 'true');
+          selectedLeft.setAttribute('data-matched', 'true');
+          selectedLeft.setAttribute('data-selected', 'false');
+          selectedLeft = null;
+          matchedCount++;
+          if (matchedCount === pairs.length) {
+            document.getElementById('matchStatus').classList.add('show');
+            unlock(6);
+          }
+        } else {
+          el.classList.add('shake');
+          setTimeout(() => el.classList.remove('shake'), 400);
+        }
+      });
+      rightWrap.appendChild(el);
+    });
+  })();
+
+  // ---------- Gate: critique (true/false) ----------
+  (function(){
+    const opts = document.querySelectorAll('#critiqueOpts .quiz-opt');
+    const fb = document.getElementById('critiqueFb');
+    const explanation = "Failing to find a significant pretest difference isn't proof the groups were equal — it's just a failure to detect one. With only ~33 students per group, the test has limited power to catch a real gap. And the study compares two intact classrooms, not individually randomized students, without any regression or ANCOVA to adjust for that clustering. \"Statistically equivalent\" here is a weaker claim than it sounds.";
+    opts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isCorrect = btn.getAttribute('data-answer') === 'true';
+        if (isCorrect) {
+          opts.forEach(b => b.disabled = true);
+          btn.setAttribute('data-correct', 'true');
+          fb.textContent = '✓ False — ' + explanation;
+          fb.className = 'gate-feedback show correct';
+          unlock(7);
+        } else {
+          btn.setAttribute('data-wrong', 'true');
+          fb.textContent = 'Not quite — think about what a non-significant t-test actually proves (or doesn\'t). Try the other option.';
+          fb.className = 'gate-feedback show incorrect';
+        }
+      });
+    });
+  })();
+
+  // ---------- Glossary modal ----------
+  (function(){
+    const btn = document.getElementById('glossaryBtn');
+    const overlay = document.getElementById('glossaryOverlay');
+    const closeBtn = document.getElementById('glossaryCloseBtn');
+    function open(){
+      overlay.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      closeBtn.focus();
+    }
+    function close(){
+      overlay.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.focus();
+    }
+    btn.addEventListener('click', () => { overlay.classList.contains('open') ? close() : open(); });
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+  })();
+
   showStep(0);
 })();
 </script>
